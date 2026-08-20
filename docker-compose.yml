@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:17.10
+    container_name: umbral-postgres
+    environment:
+      POSTGRES_DB: umbral
+      POSTGRES_USER: umbral
+      POSTGRES_PASSWORD: umbral_local
+    ports:
+      - "5432:5432"
+    volumes:
+      - umbral_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  umbral_postgres_data:

@@ -24,6 +24,14 @@ Este documento es el traspaso de contexto para iniciar **Umbral** en una tarea n
 - No incorporar tecnologías solamente para que el proyecto parezca más complejo.
 - Mantener Git con ramas de funcionalidad, commits intencionales, Pull Requests y merge manual. Automatizar primero compilación y tests mediante CI.
 
+### 2.2. Regla de implementación durable
+
+- Los recorridos verticales siguen siendo la forma de aprender, pero no deben producir código que se sabe transitorio. Antes de implementarlos, investigar la solución objetivo en el repositorio anterior y en las notas concretas de Obsidian.
+- Para cada cambio con persistencia, contratos HTTP o relaciones de dominio, presentar primero el diseño durable: datos, restricciones, archivos afectados, estrategia de carga inicial y verificación.
+- No usar listas en memoria, `CommandLineRunner`, entidades parciales o configuraciones alternativas como escalones didácticos si la solución objetivo puede decidirse y aplicarse ahora.
+- Los experimentos temporales solo existen con aprobación explícita del usuario como `spike pedagógico`, con fecha o condición de eliminación clara.
+- El repositorio anterior y las notas son evidencia de la forma de trabajo conocida por el usuario, no plantillas para copiar sin analizar. Si se difiere de ellas, explicar la razón antes de editar.
+
 ## 2.1. Material de estudio que puede consultarse
 
 En la nueva tarea se puede dar acceso a las notas del curso de Spring y a las notas de Java del usuario. Ese material debe utilizarse como contexto pedagógico, no como una lista de temas que el usuario ya domina.

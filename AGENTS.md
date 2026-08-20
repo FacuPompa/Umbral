@@ -6,7 +6,20 @@
 - Umbral es un proyecto de aprendizaje full stack. Avanzar un concepto y un recorrido vertical por vez.
 - El usuario escribe el código propio. Explicar el objetivo de cada archivo, hacer preguntas, dar pistas y revisar sus cambios. Dar código completo solo cuando lo pida expresamente.
 - No crear entidades, repositories, controllers, services, componentes u otros archivos funcionales sin explicar primero su propósito y recibir autorización explícita.
-- Mantener las decisiones del MVP: catálogo inicial Persona 5 Royal; sin login, comentarios, reacciones, PostgreSQL ni barrera anti-spoilers real hasta llegar a esos recorridos.
+- Mantener las decisiones del MVP: catálogo inicial Persona 5 Royal; sin login, comentarios, reacciones ni barrera anti-spoilers real hasta llegar a esos recorridos.
+
+## Diseño durable y referencia previa
+
+- Antes de proponer una nueva feature, persistencia, entidad, contrato HTTP, modelo de datos o refactor relevante, investigar primero la solución objetivo:
+  1. revisar los archivos pertinentes del repositorio `https://github.com/FacuPompa/java-spring`;
+  2. buscar y leer solamente las notas relevantes de Obsidian sobre ese concepto;
+  3. contrastar ambos con el estado actual de Umbral y, si hay comportamiento dependiente de versión, consultar documentación primaria actual.
+- Antes de editar código, presentar una propuesta breve con: objetivo durable, datos que viven en memoria o en PostgreSQL, archivos que cambiarán, y cómo se verificará. Esperar autorización explícita si se crearán o modificarán archivos funcionales.
+- Un recorrido vertical pequeño no justifica código descartable. No agregar mocks en memoria, datos hardcodeados, inicializadores alternativos ni modelos provisionales si la siguiente etapa previsiblemente los reemplazará.
+- Un experimento temporal solo se permite si el usuario lo aprueba expresamente como `spike pedagógico`; antes de crearlo se debe indicar su alcance, qué se eliminará después y por qué no se implementa todavía la alternativa durable.
+- Cuando exista una solución durable conocida en el proyecto de referencia, adaptarla a Umbral en vez de inventar una variante para luego reemplazarla. Ejemplo: para catálogo inicial fijo en desarrollo, elegir una sola estrategia de carga (`data.sql` idempotente) y no combinarla con `CommandLineRunner`.
+- Antes de modelar una relación, usar casos concretos de pantalla y datos para definir las entidades, restricciones y ciclo de vida completo. No crear una entidad aislada que no forme parte de un diseño ya revisado.
+- Si el usuario pide una solución basada en su repositorio anterior y sus notas, entregar una solución completa y coherente para el alcance acordado, explicando las diferencias necesarias; no dosificarla artificialmente en cambios que se sabe que se reemplazarán.
 
 ## Rutina de checkpoint Git
 
