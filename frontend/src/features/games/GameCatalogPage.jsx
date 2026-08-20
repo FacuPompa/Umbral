@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react';
-import { fetchGames } from './gameApi';
+import { fetchCheckpoints, fetchGames } from './gameApi';
 
 export default function GameCatalogPage() {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [checkpoints, setCheckpoints] = useState([]);
+  const [loadingCheckpoints, setLoadingCheckpoints] = useState(false);
+  const [checkpointsError, setCheckpointsError] = useState(null);
+  const [selectedGameId, setSelectedGameId] = useState(null);
+  const [selectedCheckpoint, setSelectedCheckpoint] = useState(null);
 
   useEffect(() => {
     async function loadGames() {
@@ -20,6 +26,26 @@ export default function GameCatalogPage() {
 
     loadGames();
   }, []);
+
+  async function loadCheckpoints(gameId) {
+    setLoadingCheckpoints(true);
+    setCheckpointsError(null);
+    setSelectedGameId(gameId);
+    setSelectedCheckpoint(null);
+
+    try {
+      const checkpointsFromApi = await fetchCheckpoints(gameId);
+      setCheckpoints(checkpointsFromApi);
+    } catch (requestError) {
+      setCheckpointsError(requestError.message);
+    } finally {
+      setLoadingCheckpoints(false);
+    }
+  }
+
+  function selectCheckpoint(checkpoint) {
+    setSelectedCheckpoint(checkpoint);
+  }
 
   if (loading) {
     return <p>Cargando catálogo...</p>;
@@ -38,6 +64,38 @@ export default function GameCatalogPage() {
         <article key={game.id}>
           <h3>{game.title}</h3>
           <p>{game.description}</p>
+
+          <button onClick={() => loadCheckpoints(game.id)}>
+            Ver checkpoints
+          </button>
+
+          {selectedGameId === game.id && (
+            <section>
+              <h4>Elegí tu progreso</h4>
+
+              {loadingCheckpoints && <p>Cargando checkpoints...</p>}
+
+              {checkpointsError && <p>{checkpointsError}</p>}
+
+              {!loadingCheckpoints && !checkpointsError && (
+                <ul>
+                  {checkpoints.map((checkpoint) => (
+                    <li key={checkpoint.id}>
+                      <button onClick={() => selectCheckpoint(checkpoint)}>
+                        {checkpoint.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {selectedCheckpoint && (
+                <p>
+                  Progreso seleccionado: {selectedCheckpoint.label}
+                </p>
+              )}
+            </section>
+          )}
         </article>
       ))}
     </section>

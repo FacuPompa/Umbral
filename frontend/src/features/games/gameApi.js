@@ -10,3 +10,13 @@ export async function fetchGames() {
 
   return response.json();
 }
+
+export async function fetchCheckpoints(gameId) {
+  const response = await fetch(`/api/games/${gameId}/checkpoints`);
+
+  if (!response.ok) {
+    throw new Error('No se pudieron cargar los checkpoints.');
+  }
+
+  return response.json();
+}
