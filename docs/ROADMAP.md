@@ -5,7 +5,7 @@ terminada solo cuando cumple su criterio observable y sus verificaciones.
 
 ## 1. Persistir checkpoints y progreso del usuario temporal
 
-- **Estado:** Pendiente.
+- **Estado:** En progreso.
 - **Objetivo:** reemplazar los checkpoints y el progreso en memoria por datos
   persistidos en PostgreSQL, sin incorporar autenticación todavía.
 - **Alcance incluido:**
@@ -23,6 +23,10 @@ terminada solo cuando cumple su criterio observable y sus verificaciones.
   bitácora, comentarios, reacciones y barrera anti-spoilers sobre publicaciones.
 - **Dependencias:** PostgreSQL local disponible; diseño durable aprobado; mantener
   la carga inicial exclusivamente con `data.sql`.
+- **Avance actual:** entidades JPA `Checkpoint`, `User` y `UserGameProgress`, y
+  `CheckpointRepository` creados. Hibernate creó las tablas del modelo en
+  PostgreSQL y el arranque fue verificado desde IntelliJ. Aún faltan carga
+  inicial, repositories restantes, servicios, contratos HTTP, React y pruebas.
 - **Criterio observable de terminado:** una persona elige un checkpoint para
   Persona 5 Royal, recarga la página y ve el mismo progreso; DBeaver muestra una
   única fila de progreso para el usuario demostración y el juego; las pruebas

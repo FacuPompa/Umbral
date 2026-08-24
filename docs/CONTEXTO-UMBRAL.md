@@ -4,7 +4,13 @@ Este documento es el traspaso de contexto para iniciar **Umbral** en una tarea n
 
 ## 1. Estado actual
 
-- Umbral todavía no tiene repositorio, carpetas ni código.
+- Umbral ya es un monorepo con `backend/`, `frontend/`, `docs/` y
+  `docker-compose.yml`. El estado técnico puntual y la continuidad de la tarea
+  viven en `docs/HANDOFF-UMBRAL.md`; las tareas durables viven en
+  `docs/ROADMAP.md`.
+- El catálogo inicial actual contiene solo Persona 5 Royal. Los checkpoints se
+  pueden consultar, pero siguen en memoria y el progreso todavía no se
+  persiste.
 - La idea fue elegida después de terminar un curso de Spring Boot.
 - El objetivo es dejar de encadenar cursos y consolidar lo aprendido construyendo una aplicación full stack propia, publicable en GitHub y útil para el CV.
 - El proyecto de práctica anterior fue `cine-java`, basado en el código del profesor. Allí se trabajó con Java 21, Spring Boot, REST, Controller, Service, Repository, DTO, entidades, PostgreSQL, Spring Data JPA, validaciones, excepciones, OpenAPI, Docker Compose, Render y una integración pequeña con LangChain4j.
@@ -23,6 +29,18 @@ Este documento es el traspaso de contexto para iniciar **Umbral** en una tarea n
 - Verificar cada paso con una prueba observable antes de continuar.
 - No incorporar tecnologías solamente para que el proyecto parezca más complejo.
 - Mantener Git con ramas de funcionalidad, commits intencionales, Pull Requests y merge manual. Automatizar primero compilación y tests mediante CI.
+
+### Coordinación con agentes de Codex
+
+- Usar un agente principal como acompañante estable de cada recorrido vertical.
+- Delegar a subagentes solo investigación, revisión o verificación que puedan
+  resolverse de forma independiente y en modo de solo lectura.
+- No usar agentes en paralelo para implementar capas del mismo flujo ni permitir
+  que más de uno modifique el repositorio.
+- Antes de delegar, definir alcance, resultado esperado, archivos que no deben
+  tocarse y criterio para cerrar la delegación.
+- El flujo completo, los roles y prompts de trabajo están en
+  `docs/FLUJO-DE-AGENTES.md`.
 
 ### 2.2. Regla de implementación durable
 
@@ -76,7 +94,7 @@ Esta autorización debe aplicarse en Spring. No alcanza con descargar todo y ocu
 - Aplicación web, no móvil nativa.
 - Comunidad social con bitácoras personales, aunque falta confirmar si el primer MVP será social desde el comienzo o privado primero.
 - Soportar inicialmente juegos con progreso lineal.
-- Cargar manualmente un catálogo pequeño de aproximadamente tres juegos.
+- Cargar manualmente el catálogo inicial de Persona 5 Royal.
 - Cargar manualmente checkpoints seguros y ordenados para esos juegos.
 - No depender inicialmente de IGDB, RAWG, Steam ni APIs externas de videojuegos.
 - Evitar mostrar el número total de checkpoints si esa cantidad puede revelar cuánto falta para terminar una historia.
@@ -120,7 +138,7 @@ umbral/
 
 Tecnologías iniciales recomendadas:
 
-- Java 21.
+- Java 26, según la configuración actual del backend.
 - Spring Boot, eligiendo una versión estable y compatible con las demás dependencias.
 - Gradle.
 - Spring Web MVC.
@@ -258,7 +276,7 @@ La nueva tarea debe resolver estas preguntas antes de crear muchas carpetas:
 
 Copiar y enviar este mensaje en la primera conversación dentro del proyecto nuevo:
 
-> Leé completamente `CONTEXTO-UMBRAL.md` antes de actuar. Quiero construir Umbral como proyecto personal full stack para aprender, no recibir una aplicación terminada. Primero revisá conmigo las decisiones abiertas y ayudame a definir el MVP. Avanzá un concepto y un recorrido vertical por vez, explicando el propósito de cada archivo y cómo viajan los datos entre React, Spring y PostgreSQL. No escribas todavía toda la estructura ni todas las entidades. Empecemos por confirmar el producto, elegir el catálogo inicial y diseñar el primer recorrido `GET /api/games` hasta React.
+> Leé completamente `docs/CONTEXTO-UMBRAL.md` antes de actuar. Quiero construir Umbral como proyecto personal full stack para aprender, no recibir una aplicación terminada. Primero revisá conmigo las decisiones abiertas y ayudame a definir el MVP. Avanzá un concepto y un recorrido vertical por vez, explicando el propósito de cada archivo y cómo viajan los datos entre React, Spring y PostgreSQL. No escribas todavía toda la estructura ni todas las entidades. Empecemos por confirmar el producto, elegir el catálogo inicial y diseñar el primer recorrido `GET /api/games` hasta React.
 
 ## 14. Referencia del proyecto anterior
 

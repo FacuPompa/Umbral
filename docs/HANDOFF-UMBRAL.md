@@ -1,6 +1,6 @@
 # Handoff de continuidad: Umbral
 
-Leer primero `CONTEXTO-UMBRAL.md` y `AGENTS.md`. Este archivo refleja el estado al 20 de agosto de 2026.
+Leer primero `docs/CONTEXTO-UMBRAL.md` y `docs/AGENTS.md`. Este archivo refleja el estado al 20 de agosto de 2026.
 
 ## Forma de trabajo obligatoria
 
@@ -12,6 +12,10 @@ Umbral sigue siendo un proyecto de aprendizaje, pero no debe acumular pasos did�
 4. Obtener autorización explícita antes de editar archivos funcionales.
 
 No usar una solución temporal si la solución objetivo ya se puede decidir. Un `spike pedagógico` requiere aprobación expresa y debe declarar qué se eliminará después.
+
+La coordinación con Codex se rige además por `docs/FLUJO-DE-AGENTES.md`: un
+agente principal por recorrido y subagentes de solo lectura solo cuando su tarea
+sea independiente.
 
 ## Producto y límites del MVP
 
@@ -51,7 +55,11 @@ La aplicación usa `spring-boot-starter-webmvc`, `spring-boot-starter-data-jpa` 
 
 ## Próximo corte durable: checkpoints y progreso
 
-El diseño de este corte fue revisado y aprobado; todavía no fue implementado.
+El diseño de este corte fue revisado y aprobado; su implementación está en
+curso. Ya existen las entidades JPA `Checkpoint`, `User` y
+`UserGameProgress`, junto con `CheckpointRepository`; Hibernate creó sus
+tablas correctamente en PostgreSQL. Aún no hay carga inicial de checkpoints o
+usuario demo, ni lectura/guardado de progreso por HTTP.
 Su planificación detallada vive en `docs/ROADMAP.md`. El alcance aprobado es:
 
 ```text
