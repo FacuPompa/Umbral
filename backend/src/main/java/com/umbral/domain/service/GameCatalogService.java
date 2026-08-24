@@ -2,7 +2,10 @@ package com.umbral.domain.service;
 
 import com.umbral.domain.dto.CheckpointResponse;
 import com.umbral.domain.dto.GameResponse;
+import com.umbral.domain.entity.Checkpoint;
 import com.umbral.domain.entity.Game;
+import com.umbral.domain.exception.ResourceNotFoundException;
+import com.umbral.domain.repository.CheckpointRepository;
 import com.umbral.domain.repository.GameRepository;
 import org.springframework.stereotype.Service;
 
@@ -12,9 +15,11 @@ import java.util.List;
 @Service
 public class GameCatalogService {
     private final GameRepository gameRepository;
+    private final CheckpointRepository checkpointRepository;
 
-    public GameCatalogService(GameRepository gameRepository) {
+    public GameCatalogService(GameRepository gameRepository, CheckpointRepository checkpointRepository) {
         this.gameRepository = gameRepository;
+        this.checkpointRepository = checkpointRepository;
     }
 
     public List<GameResponse> getAllGames() {
@@ -33,26 +38,20 @@ public class GameCatalogService {
 
     public List<CheckpointResponse> getCheckpointsByGameId (Long gameId){
 
-        if (!Long.valueOf(1L).equals(gameId)) {
-            return List.of();
+        if (!gameRepository.existsById(gameId)) {
+            throw new ResourceNotFoundException("El juego no fue encontrado");
         }
 
         List<CheckpointResponse> checkpoints = new ArrayList<>();
-        checkpoints.add(new CheckpointResponse(
-                1L,
-                "Inicio de la historia",
-                1
-        ));
-        checkpoints.add(new CheckpointResponse(
-                2L,
-                "Progreso intermedio",
-                2
-        ));
-        checkpoints.add(new CheckpointResponse(
-                3L,
-                "Progreso avanzado",
-                3
-        ));
+
+        for (Checkpoint checkpoint : checkpointRepository.findByGameIdOrderByPositionAsc(gameId)) {
+            checkpoints.add(new CheckpointResponse(
+                    checkpoint.getId(),
+                    checkpoint.getLabel(),
+                    checkpoint.getPosition()
+            ));
+        }
+
         return checkpoints;
     }
 }
