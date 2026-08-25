@@ -1,75 +1,69 @@
 # Umbral
 
-Umbral es una aplicación web para hablar de videojuegos narrativos sin recibir
-spoilers. Cada juego se divide en checkpoints narrativos y cada persona declara
-hasta cuál llegó. Esa información será la base para mostrar contenido seguro
-según el progreso del lector.
+Proyecto para hablar de juegos narrativos sin comerse spoilers.
 
-El catálogo inicial contiene Persona 5 Royal y usa tramos narrativos por
-palacios, en lugar de un porcentaje genérico de avance.
+La idea es que cada juego tenga checkpoints de historia. Antes de leer una
+entrada, cada persona indica hasta dónde llegó; con eso, más adelante, el feed
+podrá esconder lo que todavía no debería mostrar.
 
-## Estado actual
+Por ahora el catálogo de prueba es **Persona 5 Royal**. En vez de usar un
+porcentaje, el progreso se guarda por tramos de la historia, como los
+palacios.
 
-El backend ya persiste el catálogo, los checkpoints y el progreso de un usuario
-de demostración en PostgreSQL. La interfaz ya muestra el catálogo y los
-checkpoints; su próxima integración será guardar y restaurar ese progreso a
-través de la API.
+## Qué tiene hasta ahora
 
-### Implementado
+- Catálogo y checkpoints guardados en PostgreSQL.
+- Un usuario demo con un progreso por juego.
+- El progreso se crea o actualiza al elegir un checkpoint.
+- La pantalla de React restaura el progreso al recargar.
+- Validaciones para no guardar un checkpoint de otro juego.
+- Datos iniciales cargados con `data.sql`.
+- Tests de repository, service y controller con PostgreSQL temporal
+  (Testcontainers).
+- GitHub Actions corre los tests del backend en cada push y pull request.
 
-- Catálogo persistente de Persona 5 Royal.
-- Diez checkpoints narrativos ordenados.
-- Usuario de demostración persistido (`id = 1`).
-- Un único progreso por usuario y juego, actualizable mediante `PUT`.
-- Validación del checkpoint y de su pertenencia al juego.
-- Carga inicial idempotente con `data.sql`.
-- PostgreSQL local en Docker y exploración de datos con DBeaver.
-- Frontend React que lista juegos y permite consultar sus checkpoints.
-
-### API disponible
-
-| Método | Ruta | Descripción |
-| --- | --- | --- |
-| `GET` | `/api/games` | Devuelve el catálogo. |
-| `GET` | `/api/games/{gameId}/checkpoints` | Devuelve los checkpoints ordenados del juego. |
-| `GET` | `/api/me/game-progress` | Devuelve el progreso del usuario demo. |
-| `PUT` | `/api/me/games/{gameId}/progress` | Crea o actualiza el checkpoint alcanzado. |
-
-Por ahora `/api/me` siempre representa al usuario demo. No hay login ni
-autorización real todavía.
-
-## Próximos pasos
-
-1. Conectar React al `GET` y `PUT` de progreso, incluyendo restauración al
-   recargar la página.
-2. Agregar pruebas de repository, service y HTTP con PostgreSQL aislado.
-3. Permitir crear entradas de bitácora asociadas a un checkpoint.
-4. Aplicar la regla anti-spoilers en el feed.
-5. Incorporar identidad y autorización reales.
+Todavía no hay login: las rutas `/api/me/...` usan un usuario demo mientras se
+diseña la parte de identidad.
 
 ## Stack
 
-- Java 26, Spring Boot y Gradle.
-- Spring Web MVC, Spring Data JPA y Bean Validation.
-- PostgreSQL 17 en Docker Compose.
-- React, Vite y JavaScript.
+| Parte | Tecnologías |
+| --- | --- |
+| Backend | Java 26, Spring Boot, Gradle, Spring Data JPA |
+| Base de datos | PostgreSQL 17 + Docker Compose |
+| Frontend | React, Vite, JavaScript |
+| Tests | JUnit, MockMvc, Testcontainers |
+| CI | GitHub Actions |
 
-## Ejecutar en local
+## Endpoints actuales
 
-1. Levantá PostgreSQL desde la raíz:
+| Método | Ruta | Uso |
+| --- | --- | --- |
+| `GET` | `/api/games` | Lista el catálogo. |
+| `GET` | `/api/games/{gameId}/checkpoints` | Lista los checkpoints del juego. |
+| `GET` | `/api/me/game-progress` | Consulta el progreso del usuario demo. |
+| `PUT` | `/api/me/games/{gameId}/progress` | Guarda el checkpoint alcanzado. |
 
-   ```bash
-   docker compose up -d
-   ```
+## Levantarlo localmente
 
-2. Iniciá `UmbralApplication` desde IntelliJ.
-3. En otra terminal, levantá el frontend:
+Primero levantá PostgreSQL desde la raíz:
 
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+```bash
+docker compose up -d
+```
 
-El backend usa PostgreSQL en `localhost:5432`, base `umbral`, con credenciales
-locales definidas en `backend/src/main/resources/application.properties`.
+Después iniciá `UmbralApplication` desde IntelliJ. Para el frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+El frontend queda en `http://localhost:5173` y el backend usa el puerto `8080`.
+
+## Lo próximo
+
+- Diseñar una entrada de bitácora asociada a un juego y checkpoint.
+- Usar el progreso de quien lee para filtrar spoilers.
+- Reemplazar el usuario demo por identidad real.
