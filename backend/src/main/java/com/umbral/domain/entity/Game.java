@@ -16,9 +16,10 @@ public class Game {
     @Column(nullable = false)
     private String description;
 
-    protected Game(){}
+    protected Game() {
+    }
 
-    public Game(String title, String description){
+    public Game(String title, String description) {
         this.title = title;
         this.description = description;
     }

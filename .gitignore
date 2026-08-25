@@ -1,0 +1,4 @@
+# Documentación interna de planificación y trabajo asistido.
+# El único Markdown público y versionado es el README de la raíz.
+*.md
+!/README.md
