@@ -18,14 +18,14 @@ public class GameController {
     }
 
     @GetMapping
-    public ResponseEntity<List<GameResponse>> getAllGames(){
+    public ResponseEntity<List<GameResponse>> getAllGames() {
         List<GameResponse> games = gameCatalogService.getAllGames();
         return ResponseEntity.ok(games);
     }
 
 
     @GetMapping("/{gameId}/checkpoints")
-    public ResponseEntity<List<CheckpointResponse>> getCheckpointsByGameId(@PathVariable Long gameId){
+    public ResponseEntity<List<CheckpointResponse>> getCheckpointsByGameId(@PathVariable Long gameId) {
         List<CheckpointResponse> checkpoints = gameCatalogService.getCheckpointsByGameId(gameId);
         return ResponseEntity.ok(checkpoints);
     }

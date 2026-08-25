@@ -36,7 +36,7 @@ public class GameCatalogService {
         return games;
     }
 
-    public List<CheckpointResponse> getCheckpointsByGameId (Long gameId){
+    public List<CheckpointResponse> getCheckpointsByGameId(Long gameId) {
 
         if (!gameRepository.existsById(gameId)) {
             throw new ResourceNotFoundException("El juego no fue encontrado");

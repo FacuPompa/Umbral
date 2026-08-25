@@ -33,7 +33,8 @@ public class Checkpoint {
     )
     private int position;
 
-    protected Checkpoint(){}
+    protected Checkpoint() {
+    }
 
     public Long getId() {
         return id;
