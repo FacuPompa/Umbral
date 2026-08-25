@@ -2,3 +2,25 @@
 # El único Markdown público y versionado es el README de la raíz.
 *.md
 !/README.md
+
+# Java y Gradle
+backend/.gradle/
+backend/build/
+backend/out/
+*.class
+
+# Node y Vite
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.idea/
+backend/.idea/
+*.iml
+
+# Configuración y archivos locales
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
