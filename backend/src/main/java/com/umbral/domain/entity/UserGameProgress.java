@@ -22,35 +22,22 @@ public class UserGameProgress {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
-            name = "game_id",
-            nullable = false,
-            insertable = false,
-            updatable = false
-    )
+    @JoinColumn(name = "game_id", nullable = false)
     private Game game;
 
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumns({
-            @JoinColumn(
-                    name = "checkpoint_id",
-                    referencedColumnName = "id",
-                    nullable = false
-            ),
-            @JoinColumn(
-                    name = "game_id",
-                    referencedColumnName = "game_id",
-                    nullable = false
-            )
-    })
+    @JoinColumn(name = "checkpoint_id", nullable = false)
     private Checkpoint checkpoint;
 
-    protected UserGameProgress(){}
+    protected UserGameProgress() {
+    }
 
-    public UserGameProgress(User user, Checkpoint checkpoint) {
+    public UserGameProgress(User user,Game game, Checkpoint checkpoint) {
         this.user = user;
+        this.game = game;
         this.checkpoint = checkpoint;
     }
 

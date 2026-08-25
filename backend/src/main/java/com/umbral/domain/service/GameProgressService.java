@@ -2,6 +2,7 @@ package com.umbral.domain.service;
 
 import com.umbral.domain.dto.UpdateGameProgressRequest;
 import com.umbral.domain.entity.Checkpoint;
+import com.umbral.domain.entity.Game;
 import com.umbral.domain.exception.CheckpointDoesNotBelongToGameException;
 import com.umbral.domain.exception.ResourceNotFoundException;
 import com.umbral.domain.repository.CheckpointRepository;
@@ -46,9 +47,10 @@ public class GameProgressService {
     @Transactional
     public GameProgressResponse updateCurrentUserProgress(Long gameId, UpdateGameProgressRequest request) {
         User currentUser = currentUserResolver.getCurrentUser();
-        if (!gameRepository.existsById(gameId)) {
-            throw new ResourceNotFoundException("El juego no fue encontrado.");
-        }
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "El juego no fue encontrado."
+                ));
         Checkpoint checkpoint = checkpointRepository.findById(request.checkpointId())
                 .orElseThrow(() -> new ResourceNotFoundException("El checkpoint no fue encontrado."));
 
@@ -66,7 +68,7 @@ public class GameProgressService {
             progress = existingProgress.get();
             progress.updateCheckpoint(checkpoint);
         } else {
-            progress = new UserGameProgress(currentUser, checkpoint);
+            progress = new UserGameProgress(currentUser, game, checkpoint);
         }
 
         UserGameProgress savedProgress = userGameProgressRepository.save(progress);
@@ -76,7 +78,7 @@ public class GameProgressService {
 
     private GameProgressResponse toResponse(UserGameProgress progress) {
         return new GameProgressResponse(
-                progress.getCheckpoint().getGame().getId(),
+                progress.getGame().getId(),
                 progress.getCheckpoint().getId(),
                 progress.getCheckpoint().getLabel(),
                 progress.getCheckpoint().getPosition()
