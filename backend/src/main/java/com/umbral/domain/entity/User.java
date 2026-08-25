@@ -13,7 +13,8 @@ public class User {
     @Column(nullable = false, unique = true)
     private String handle;
 
-    protected User(){}
+    protected User() {
+    }
 
     public User(String handle) {
         this.handle = handle;
