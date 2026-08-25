@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
-import { fetchCheckpoints, fetchGames } from './gameApi';
+import {
+  fetchCheckpoints,
+  fetchGameProgress,
+  fetchGames,
+  updateGameProgress,
+} from './gameApi';
 
 export default function GameCatalogPage() {
   const [games, setGames] = useState([]);
@@ -10,13 +15,28 @@ export default function GameCatalogPage() {
   const [loadingCheckpoints, setLoadingCheckpoints] = useState(false);
   const [checkpointsError, setCheckpointsError] = useState(null);
   const [selectedGameId, setSelectedGameId] = useState(null);
-  const [selectedCheckpoint, setSelectedCheckpoint] = useState(null);
+
+  const [progressByGameId, setProgressByGameId] = useState({});
+  const [savingProgress, setSavingProgress] = useState(false);
+  const [savingProgressError, setSavingProgressError] = useState(null);
 
   useEffect(() => {
-    async function loadGames() {
+    async function loadInitialData() {
       try {
-        const gamesFromApi = await fetchGames();
+        const [gamesFromApi, progressFromApi] = await Promise.all([
+          fetchGames(),
+          fetchGameProgress(),
+        ]);
+
         setGames(gamesFromApi);
+
+        const progressMap = {};
+
+        for (const progress of progressFromApi) {
+          progressMap[progress.gameId] = progress;
+        }
+
+        setProgressByGameId(progressMap);
       } catch (requestError) {
         setError(requestError.message);
       } finally {
@@ -24,14 +44,13 @@ export default function GameCatalogPage() {
       }
     }
 
-    loadGames();
+    loadInitialData();
   }, []);
 
   async function loadCheckpoints(gameId) {
     setLoadingCheckpoints(true);
     setCheckpointsError(null);
     setSelectedGameId(gameId);
-    setSelectedCheckpoint(null);
 
     try {
       const checkpointsFromApi = await fetchCheckpoints(gameId);
@@ -43,8 +62,22 @@ export default function GameCatalogPage() {
     }
   }
 
-  function selectCheckpoint(checkpoint) {
-    setSelectedCheckpoint(checkpoint);
+  async function selectCheckpoint(gameId, checkpoint) {
+    setSavingProgress(true);
+    setSavingProgressError(null);
+
+    try {
+      const savedProgress = await updateGameProgress(gameId, checkpoint.id);
+
+      setProgressByGameId((currentProgress) => ({
+        ...currentProgress,
+        [savedProgress.gameId]: savedProgress,
+      }));
+    } catch (requestError) {
+      setSavingProgressError(requestError.message);
+    } finally {
+      setSavingProgress(false);
+    }
   }
 
   if (loading) {
@@ -60,44 +93,53 @@ export default function GameCatalogPage() {
       <h1>Umbral</h1>
       <h2>Catálogo</h2>
 
-      {games.map((game) => (
-        <article key={game.id}>
-          <h3>{game.title}</h3>
-          <p>{game.description}</p>
+      {games.map((game) => {
+        const savedProgress = progressByGameId[game.id];
 
-          <button onClick={() => loadCheckpoints(game.id)}>
-            Ver checkpoints
-          </button>
+        return (
+          <article key={game.id}>
+            <h3>{game.title}</h3>
+            <p>{game.description}</p>
 
-          {selectedGameId === game.id && (
-            <section>
-              <h4>Elegí tu progreso</h4>
+            <button onClick={() => loadCheckpoints(game.id)}>
+              Ver checkpoints
+            </button>
 
-              {loadingCheckpoints && <p>Cargando checkpoints...</p>}
+            {savedProgress && (
+              <p>Progreso guardado: {savedProgress.checkpointLabel}</p>
+            )}
 
-              {checkpointsError && <p>{checkpointsError}</p>}
+            {selectedGameId === game.id && (
+              <section>
+                <h4>Elegí tu progreso</h4>
 
-              {!loadingCheckpoints && !checkpointsError && (
-                <ul>
-                  {checkpoints.map((checkpoint) => (
-                    <li key={checkpoint.id}>
-                      <button onClick={() => selectCheckpoint(checkpoint)}>
-                        {checkpoint.label}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                {loadingCheckpoints && <p>Cargando checkpoints...</p>}
 
-              {selectedCheckpoint && (
-                <p>
-                  Progreso seleccionado: {selectedCheckpoint.label}
-                </p>
-              )}
-            </section>
-          )}
-        </article>
-      ))}
+                {checkpointsError && <p>{checkpointsError}</p>}
+
+                {!loadingCheckpoints && !checkpointsError && (
+                  <ul>
+                    {checkpoints.map((checkpoint) => (
+                      <li key={checkpoint.id}>
+                        <button
+                          disabled={savingProgress}
+                          onClick={() => selectCheckpoint(game.id, checkpoint)}
+                        >
+                          {checkpoint.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {savingProgress && <p>Guardando progreso...</p>}
+
+                {savingProgressError && <p>{savingProgressError}</p>}
+              </section>
+            )}
+          </article>
+        );
+      })}
     </section>
   );
 }

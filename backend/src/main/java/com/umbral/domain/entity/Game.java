@@ -9,12 +9,17 @@ public class Game {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, unique = true)
     private String title;
+
+    @Column(nullable = false)
     private String description;
 
-    protected Game(){}
+    protected Game() {
+    }
 
-    public Game(String title, String description){
+    public Game(String title, String description) {
         this.title = title;
         this.description = description;
     }
