@@ -36,3 +36,56 @@ SELECT setval(
     (SELECT MAX(id) FROM app_users),
     true
 );
+INSERT INTO app_users (handle)
+VALUES ('umbral-author-demo')
+ON CONFLICT (handle) DO NOTHING;
+
+INSERT INTO user_game_progress (user_id, game_id, checkpoint_id)
+SELECT
+    app_user.id,
+    game.id,
+    checkpoint.id
+FROM app_users AS app_user
+JOIN games AS game
+    ON game.title = 'Persona 5 Royal'
+JOIN checkpoints AS checkpoint
+    ON checkpoint.game_id = game.id
+    AND checkpoint.position = 8
+WHERE app_user.handle = 'umbral-author-demo'
+ON CONFLICT (user_id, game_id) DO UPDATE
+SET checkpoint_id = EXCLUDED.checkpoint_id;
+
+INSERT INTO journal_entries (author_id, checkpoint_id, content, created_at)
+SELECT
+    app_user.id,
+    checkpoint.id,
+    entry_data.content,
+    entry_data.created_at
+FROM app_users AS app_user
+JOIN games AS game
+    ON game.title = 'Persona 5 Royal'
+JOIN (
+    VALUES
+        (
+            3,
+            'Me gustó mucho cómo cambia la dinámica del grupo después de este tramo.',
+            TIMESTAMPTZ '2026-08-20 15:00:00+00'
+        ),
+        (
+            7,
+            'Cada vez tengo más ganas de sentarme a jugar una tarde entera. Este tramo viene con un ritmo tremendo.',
+            TIMESTAMPTZ '2026-08-21 18:30:00+00'
+        )
+) AS entry_data(checkpoint_position, content, created_at)
+    ON TRUE
+JOIN checkpoints AS checkpoint
+    ON checkpoint.game_id = game.id
+    AND checkpoint.position = entry_data.checkpoint_position
+WHERE app_user.handle = 'umbral-author-demo'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM journal_entries AS existing_entry
+      WHERE existing_entry.author_id = app_user.id
+        AND existing_entry.checkpoint_id = checkpoint.id
+        AND existing_entry.content = entry_data.content
+  );
