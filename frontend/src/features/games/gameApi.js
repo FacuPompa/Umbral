@@ -46,3 +46,29 @@ export async function updateGameProgress(gameId, checkpointId) {
 
   return response.json();
 }
+
+export async function fetchJournalEntries(gameId) {
+  const response = await fetch(`/api/games/${gameId}/journal-entries`);
+
+  if (!response.ok) {
+    throw new Error('No se pudo cargar la bitácora.');
+  }
+
+  return response.json();
+}
+
+export async function createJournalEntry(checkpointId, content) {
+  const response = await fetch('/api/me/journal-entries', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ checkpointId, content }),
+  });
+
+  if (!response.ok) {
+    throw new Error('No se pudo publicar la entrada.');
+  }
+
+  return response.json();
+}
