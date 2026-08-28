@@ -2,9 +2,9 @@
 
 Proyecto para hablar de juegos narrativos sin comerse spoilers.
 
-La idea es que cada juego tenga checkpoints de historia. Antes de leer una
-entrada, cada persona indica hasta dónde llegó; con eso, más adelante, el feed
-podrá esconder lo que todavía no debería mostrar.
+Cada juego se divide en checkpoints de historia. Antes de leer o publicar una
+entrada, cada persona indica hasta dónde llegó. El backend usa ese avance para
+devolver solamente conversaciones que ya son seguras para esa persona.
 
 Por ahora el catálogo de prueba es **Persona 5 Royal**. En vez de usar un
 porcentaje, el progreso se guarda por tramos de la historia, como los
@@ -12,11 +12,17 @@ palacios.
 
 ## Qué tiene hasta ahora
 
-- Catálogo y checkpoints guardados en PostgreSQL.
-- Un usuario demo con un progreso por juego.
-- El progreso se crea o actualiza al elegir un checkpoint.
-- La pantalla de React restaura el progreso al recargar.
-- Validaciones para no guardar un checkpoint de otro juego.
+- Landing pública que explica la idea de Umbral y carga el catálogo real.
+- Tema claro/oscuro que recuerda la elección en el navegador.
+- Catálogo, checkpoints y entradas de bitácora guardados en PostgreSQL.
+- Un usuario demo con progreso por juego y entradas de ejemplo.
+- El progreso se crea o actualiza al elegir un checkpoint y se restaura al
+  recargar React.
+- Se pueden publicar entradas de texto solamente hasta el checkpoint alcanzado.
+- El feed de cada juego se filtra en Spring según el progreso del lector, para
+  no devolver spoilers que React solo tendría que ocultar visualmente.
+- Validaciones para no guardar un checkpoint de otro juego ni publicar más allá
+  del avance actual.
 - Datos iniciales cargados con `data.sql`.
 - Tests de repository, service y controller con PostgreSQL temporal
   (Testcontainers).
@@ -31,7 +37,7 @@ diseña la parte de identidad.
 | --- | --- |
 | Backend | Java 26, Spring Boot, Gradle, Spring Data JPA |
 | Base de datos | PostgreSQL 17 + Docker Compose |
-| Frontend | React, Vite, JavaScript |
+| Frontend | React, React Router, Vite, JavaScript |
 | Tests | JUnit, MockMvc, Testcontainers |
 | CI | GitHub Actions |
 
@@ -43,6 +49,8 @@ diseña la parte de identidad.
 | `GET` | `/api/games/{gameId}/checkpoints` | Lista los checkpoints del juego. |
 | `GET` | `/api/me/game-progress` | Consulta el progreso del usuario demo. |
 | `PUT` | `/api/me/games/{gameId}/progress` | Guarda el checkpoint alcanzado. |
+| `GET` | `/api/games/{gameId}/journal-entries` | Lista solo las entradas seguras para el progreso actual. |
+| `POST` | `/api/me/journal-entries` | Publica una entrada en un checkpoint ya alcanzado. |
 
 ## Levantarlo localmente
 
@@ -61,9 +69,12 @@ npm run dev
 ```
 
 El frontend queda en `http://localhost:5173` y el backend usa el puerto `8080`.
+La ruta `/` muestra la presentación y el catálogo; `/games/1` abre el detalle
+del juego de prueba.
 
 ## Lo próximo
 
-- Diseñar una entrada de bitácora asociada a un juego y checkpoint.
-- Usar el progreso de quien lee para filtrar spoilers.
 - Reemplazar el usuario demo por identidad real.
+- Diseñar perfiles y un espacio personal separado de la landing pública.
+- Permitir respuestas en hilo a las entradas.
+- Incorporar búsqueda de juegos y usuarios, respetando la barrera anti-spoilers.
