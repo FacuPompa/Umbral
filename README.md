@@ -19,11 +19,13 @@ palacios.
 - El progreso se crea o actualiza al elegir un checkpoint y se restaura al
   recargar React.
 - Se pueden publicar entradas de texto solamente hasta el checkpoint alcanzado.
+- Cada entrada se clasifica como reflexión, duda, teoría o reseña.
 - El feed de cada juego se filtra en Spring según el progreso del lector, para
   no devolver spoilers que React solo tendría que ocultar visualmente.
 - Validaciones para no guardar un checkpoint de otro juego ni publicar más allá
   del avance actual.
 - Datos iniciales cargados con `data.sql`.
+- Esquema PostgreSQL versionado con Flyway.
 - Tests de repository, service y controller con PostgreSQL temporal
   (Testcontainers).
 - GitHub Actions corre los tests del backend en cada push y pull request.
@@ -35,7 +37,7 @@ diseña la parte de identidad.
 
 | Parte | Tecnologías |
 | --- | --- |
-| Backend | Java 26, Spring Boot, Gradle, Spring Data JPA |
+| Backend | Java 26, Spring Boot, Gradle, Spring Data JPA, Flyway |
 | Base de datos | PostgreSQL 17 + Docker Compose |
 | Frontend | React, React Router, Vite, JavaScript |
 | Tests | JUnit, MockMvc, Testcontainers |

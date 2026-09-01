@@ -6,6 +6,7 @@ import com.umbral.domain.entity.Checkpoint;
 import com.umbral.domain.entity.Game;
 import com.umbral.domain.entity.User;
 import com.umbral.domain.entity.UserGameProgress;
+import com.umbral.domain.entity.JournalEntryType;
 import com.umbral.domain.exception.AuthorCannotPublishBeyondProgressException;
 import com.umbral.domain.repository.CheckpointRepository;
 import com.umbral.domain.repository.GameRepository;
@@ -54,6 +55,7 @@ class JournalEntryServiceTest {
         JournalEntryResponse response = journalEntryService
                 .createCurrentUserEntry(new CreateJournalEntryRequest(
                         madarame.getId(),
+                        JournalEntryType.REFLECTION,
                         "Una entrada creada desde un test."
                 ));
 
@@ -61,6 +63,7 @@ class JournalEntryServiceTest {
         assertEquals("umbral-demo", response.authorHandle());
         assertEquals(persona5Royal.getId(), response.gameId());
         assertEquals("Palacio de Madarame", response.checkpointLabel());
+        assertEquals(JournalEntryType.REFLECTION, response.type());
     }
 
     @Test
@@ -80,6 +83,7 @@ class JournalEntryServiceTest {
                 () -> journalEntryService.createCurrentUserEntry(
                         new CreateJournalEntryRequest(
                                 niijima.getId(),
+                                JournalEntryType.QUESTION,
                                 "Esta entrada no debería publicarse."
                         )
                 )

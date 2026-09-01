@@ -57,7 +57,8 @@ class JournalEntryControllerTest {
         mockMvc.perform(get("/api/games/{gameId}/journal-entries", persona5Royal.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].checkpointLabel").value("Palacio de Madarame"));
+                .andExpect(jsonPath("$[0].checkpointLabel").value("Palacio de Madarame"))
+                .andExpect(jsonPath("$[0].type").value("REFLECTION"));
     }
 
     @Test
@@ -74,6 +75,7 @@ class JournalEntryControllerTest {
                         .content("""
                                 {
                                   "checkpointId": %d,
+                                  "type": "QUESTION",
                                   "content": "Una entrada creada a través del controller."
                                 }
                                 """.formatted(madarame.getId())))
@@ -81,6 +83,7 @@ class JournalEntryControllerTest {
                 .andExpect(jsonPath("$.authorHandle").value("umbral-demo"))
                 .andExpect(jsonPath("$.gameId").value(persona5Royal.getId()))
                 .andExpect(jsonPath("$.checkpointLabel").value("Palacio de Madarame"))
+                .andExpect(jsonPath("$.type").value("QUESTION"))
                 .andExpect(jsonPath("$.content")
                         .value("Una entrada creada a través del controller."));
     }
@@ -102,6 +105,7 @@ class JournalEntryControllerTest {
                         .content("""
                                 {
                                   "checkpointId": %d,
+                                  "type": "THEORY",
                                   "content": "Esta entrada debería ser rechazada."
                                 }
                                 """.formatted(niijima.getId())))
@@ -115,7 +119,21 @@ class JournalEntryControllerTest {
                         .content("""
                                 {
                                   "checkpointId": 1,
+                                  "type": "REFLECTION",
                                   "content": " "
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void rejectsEntryWithoutType() throws Exception {
+        mockMvc.perform(post("/api/me/journal-entries")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "checkpointId": 1,
+                                  "content": "Una publicación sin tipo."
                                 }
                                 """))
                 .andExpect(status().isBadRequest());

@@ -17,6 +17,13 @@ function formatEntryDate(createdAt) {
   }).format(new Date(createdAt));
 }
 
+const entryTypeLabels = {
+  REFLECTION: 'Reflexión',
+  QUESTION: 'Duda',
+  THEORY: 'Teoría',
+  REVIEW: 'Reseña',
+};
+
 export default function GameDetailPage() {
   const { gameId } = useParams();
   const [game, setGame] = useState(null);
@@ -32,6 +39,7 @@ export default function GameDetailPage() {
   const [loadingJournalEntries, setLoadingJournalEntries] = useState(false);
   const [journalEntriesError, setJournalEntriesError] = useState(null);
   const [entryCheckpointId, setEntryCheckpointId] = useState('');
+  const [entryType, setEntryType] = useState('');
   const [entryContent, setEntryContent] = useState('');
   const [savingEntry, setSavingEntry] = useState(false);
   const [savingEntryError, setSavingEntryError] = useState(null);
@@ -126,7 +134,8 @@ export default function GameDetailPage() {
     setSavingEntry(true);
     setSavingEntryError(null);
     try {
-      await createJournalEntry(Number(entryCheckpointId), entryContent);
+      await createJournalEntry(Number(entryCheckpointId), entryType, entryContent);
+      setEntryType('');
       setEntryContent('');
       await loadJournalEntries(game.id);
     } catch (requestError) {
@@ -219,12 +228,22 @@ export default function GameDetailPage() {
                   </select>
                 </label>
                 <label>
+                  Tipo de publicación
+                  <select value={entryType} onChange={(event) => setEntryType(event.target.value)}>
+                    <option value="">Elegí una opción</option>
+                    <option value="REFLECTION">Reflexión</option>
+                    <option value="QUESTION">Duda</option>
+                    <option value="THEORY">Teoría</option>
+                    <option value="REVIEW">Reseña</option>
+                  </select>
+                </label>
+                <label>
                   Tu entrada
                   <textarea value={entryContent} maxLength={5000} onChange={(event) => setEntryContent(event.target.value)} placeholder="Compartí lo que te dejó este tramo..." />
                 </label>
                 <div className="form-footer">
                   <p>Solo podés publicar sobre checkpoints que ya alcanzaste.</p>
-                  <button className="button-primary" disabled={savingEntry || !entryCheckpointId || !entryContent.trim()} type="submit">
+                  <button className="button-primary" disabled={savingEntry || !entryCheckpointId || !entryType || !entryContent.trim()} type="submit">
                     {savingEntry ? 'Publicando...' : 'Publicar'}
                   </button>
                 </div>
@@ -247,7 +266,11 @@ export default function GameDetailPage() {
               <ol className="journal-list">
                 {journalEntries.map((entry) => (
                   <li key={entry.id} className="journal-entry">
-                    <p className="journal-entry-meta">@{entry.authorHandle} · {entry.checkpointLabel} · {formatEntryDate(entry.createdAt)}</p>
+                    <p className="journal-entry-meta">
+                      @{entry.authorHandle} · {entry.checkpointLabel} ·{' '}
+                      <span className="entry-type">{entryTypeLabels[entry.type] ?? entry.type}</span>{' '}
+                      · {formatEntryDate(entry.createdAt)}
+                    </p>
                     <p>{entry.content}</p>
                   </li>
                 ))}
