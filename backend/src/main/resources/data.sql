@@ -92,3 +92,35 @@ WHERE app_user.handle = 'umbral-author-demo'
         AND existing_entry.checkpoint_id = checkpoint.id
         AND existing_entry.content = entry_data.content
   );
+
+  INSERT INTO journal_entry_replies (
+      journal_entry_id,
+      author_id,
+      content,
+      created_at
+  )
+  SELECT
+      entry.id,
+      reply_author.id,
+      'Me quedó la misma sensación. A partir de acá el grupo empieza a sentirse mucho más unido.',
+      TIMESTAMPTZ '2026-08-22 14:00:00+00'
+  FROM journal_entries AS entry
+  JOIN app_users AS entry_author
+      ON entry_author.id = entry.author_id
+  JOIN app_users AS reply_author
+      ON reply_author.handle = 'umbral-author-demo'
+  JOIN checkpoints AS checkpoint
+      ON checkpoint.id = entry.checkpoint_id
+  JOIN games AS game
+      ON game.id = checkpoint.game_id
+  WHERE game.title = 'Persona 5 Royal'
+    AND checkpoint.position = 3
+    AND entry_author.handle = 'umbral-author-demo'
+    AND entry.content = 'Me gustó mucho cómo cambia la dinámica del grupo después de este tramo.'
+    AND NOT EXISTS (
+        SELECT 1
+        FROM journal_entry_replies AS existing_reply
+        WHERE existing_reply.journal_entry_id = entry.id
+          AND existing_reply.author_id = reply_author.id
+          AND existing_reply.content = 'Me quedó la misma sensación. A partir de acá el grupo empieza a sentirse mucho más unido.'
+    );

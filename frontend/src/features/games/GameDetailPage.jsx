@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   createJournalEntry,
+  createJournalReply,
   fetchCheckpoints,
   fetchGameProgress,
   fetchGames,
   fetchJournalEntries,
+  fetchJournalReplies,
   updateGameProgress,
 } from './gameApi';
 
@@ -43,6 +45,13 @@ export default function GameDetailPage() {
   const [entryContent, setEntryContent] = useState('');
   const [savingEntry, setSavingEntry] = useState(false);
   const [savingEntryError, setSavingEntryError] = useState(null);
+  const [openRepliesEntryId, setOpenRepliesEntryId] = useState(null);
+  const [repliesByEntryId, setRepliesByEntryId] = useState({});
+  const [loadingRepliesEntryId, setLoadingRepliesEntryId] = useState(null);
+  const [repliesError, setRepliesError] = useState(null);
+  const [replyContent, setReplyContent] = useState('');
+  const [savingReply, setSavingReply] = useState(false);
+  const [savingReplyError, setSavingReplyError] = useState(null);
 
   const numericGameId = Number(gameId);
 
@@ -54,6 +63,8 @@ export default function GameDetailPage() {
       setProgress(null);
       setCheckpoints([]);
       setJournalEntries([]);
+      setOpenRepliesEntryId(null);
+      setRepliesByEntryId({});
 
       if (!Number.isInteger(numericGameId) || numericGameId <= 0) {
         setLoading(false);
@@ -105,6 +116,11 @@ export default function GameDetailPage() {
   async function loadJournalEntries(id) {
     setLoadingJournalEntries(true);
     setJournalEntriesError(null);
+    setOpenRepliesEntryId(null);
+    setRepliesByEntryId({});
+    setRepliesError(null);
+    setReplyContent('');
+    setSavingReplyError(null);
     try {
       setJournalEntries(await fetchJournalEntries(id));
     } catch (requestError) {
@@ -142,6 +158,54 @@ export default function GameDetailPage() {
       setSavingEntryError(requestError.message);
     } finally {
       setSavingEntry(false);
+    }
+  }
+
+  async function toggleReplies(entryId) {
+    if (openRepliesEntryId === entryId) {
+      setOpenRepliesEntryId(null);
+      setRepliesError(null);
+      setSavingReplyError(null);
+      return;
+    }
+
+    setOpenRepliesEntryId(entryId);
+    setRepliesError(null);
+    setSavingReplyError(null);
+    setReplyContent('');
+
+    if (Object.hasOwn(repliesByEntryId, entryId)) return;
+
+    setLoadingRepliesEntryId(entryId);
+    try {
+      const replies = await fetchJournalReplies(entryId);
+      setRepliesByEntryId((currentReplies) => ({
+        ...currentReplies,
+        [entryId]: replies,
+      }));
+    } catch (requestError) {
+      setRepliesError(requestError.message);
+    } finally {
+      setLoadingRepliesEntryId(null);
+    }
+  }
+
+  async function createReply(event, entryId) {
+    event.preventDefault();
+    setSavingReply(true);
+    setSavingReplyError(null);
+
+    try {
+      const savedReply = await createJournalReply(entryId, replyContent);
+      setRepliesByEntryId((currentReplies) => ({
+        ...currentReplies,
+        [entryId]: [...(currentReplies[entryId] ?? []), savedReply],
+      }));
+      setReplyContent('');
+    } catch (requestError) {
+      setSavingReplyError(requestError.message);
+    } finally {
+      setSavingReply(false);
     }
   }
 
@@ -264,16 +328,72 @@ export default function GameDetailPage() {
             )}
             {!loadingJournalEntries && !journalEntriesError && journalEntries.length > 0 && (
               <ol className="journal-list">
-                {journalEntries.map((entry) => (
-                  <li key={entry.id} className="journal-entry">
-                    <p className="journal-entry-meta">
-                      @{entry.authorHandle} · {entry.checkpointLabel} ·{' '}
-                      <span className="entry-type">{entryTypeLabels[entry.type] ?? entry.type}</span>{' '}
-                      · {formatEntryDate(entry.createdAt)}
-                    </p>
-                    <p>{entry.content}</p>
-                  </li>
-                ))}
+                {journalEntries.map((entry) => {
+                  const isRepliesOpen = openRepliesEntryId === entry.id;
+                  const replies = repliesByEntryId[entry.id] ?? [];
+                  const isLoadingReplies = loadingRepliesEntryId === entry.id;
+
+                  return (
+                    <li key={entry.id} className="journal-entry">
+                      <p className="journal-entry-meta">
+                        @{entry.authorHandle} · {entry.checkpointLabel} ·{' '}
+                        <span className="entry-type">{entryTypeLabels[entry.type] ?? entry.type}</span>{' '}
+                        · {formatEntryDate(entry.createdAt)}
+                      </p>
+                      <p>{entry.content}</p>
+                      <button
+                        className="reply-toggle"
+                        type="button"
+                        aria-expanded={isRepliesOpen}
+                        onClick={() => toggleReplies(entry.id)}
+                      >
+                        {isRepliesOpen ? 'Ocultar respuestas' : 'Ver respuestas'}
+                      </button>
+
+                      {isRepliesOpen && (
+                        <div className="reply-thread">
+                          {isLoadingReplies && <p className="reply-status">Cargando respuestas...</p>}
+                          {repliesError && <p className="reply-status status-message-error">{repliesError}</p>}
+                          {!isLoadingReplies && !repliesError && replies.length === 0 && (
+                            <p className="reply-status">Todavía no hay respuestas. Podés abrir la conversación.</p>
+                          )}
+                          {!isLoadingReplies && !repliesError && replies.length > 0 && (
+                            <ol className="reply-list">
+                              {replies.map((reply) => (
+                                <li key={reply.id} className="journal-reply">
+                                  <p className="journal-entry-meta">
+                                    @{reply.authorHandle} · {formatEntryDate(reply.createdAt)}
+                                  </p>
+                                  <p>{reply.content}</p>
+                                </li>
+                              ))}
+                            </ol>
+                          )}
+                          {!isLoadingReplies && !repliesError && (
+                            <form className="reply-form" onSubmit={(event) => createReply(event, entry.id)}>
+                              <label>
+                                Tu respuesta
+                                <textarea
+                                  value={replyContent}
+                                  maxLength={5000}
+                                  onChange={(event) => setReplyContent(event.target.value)}
+                                  placeholder="Sumate a la conversación sin adelantar nada..."
+                                />
+                              </label>
+                              <div className="reply-form-footer">
+                                <p>Esta respuesta pertenece al mismo tramo que la entrada.</p>
+                                <button className="button-primary" disabled={savingReply || !replyContent.trim()} type="submit">
+                                  {savingReply ? 'Publicando...' : 'Responder'}
+                                </button>
+                              </div>
+                            </form>
+                          )}
+                          {savingReplyError && <p className="reply-status status-message-error">{savingReplyError}</p>}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ol>
             )}
           </section>
