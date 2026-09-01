@@ -20,6 +20,9 @@ palacios.
   recargar React.
 - Se pueden publicar entradas de texto solamente hasta el checkpoint alcanzado.
 - Cada entrada se clasifica como reflexión, duda, teoría o reseña.
+- Las entradas pueden recibir respuestas directas para formar hilos breves.
+- Las respuestas heredan el contexto anti-spoilers de su entrada padre: si una
+  entrada no es segura, su hilo tampoco se devuelve.
 - El feed de cada juego se filtra en Spring según el progreso del lector, para
   no devolver spoilers que React solo tendría que ocultar visualmente.
 - Validaciones para no guardar un checkpoint de otro juego ni publicar más allá
@@ -53,6 +56,8 @@ diseña la parte de identidad.
 | `PUT` | `/api/me/games/{gameId}/progress` | Guarda el checkpoint alcanzado. |
 | `GET` | `/api/games/{gameId}/journal-entries` | Lista solo las entradas seguras para el progreso actual. |
 | `POST` | `/api/me/journal-entries` | Publica una entrada en un checkpoint ya alcanzado. |
+| `GET` | `/api/journal-entries/{entryId}/replies` | Lista las respuestas de una entrada visible. |
+| `POST` | `/api/me/journal-entries/{entryId}/replies` | Publica una respuesta en una entrada visible. |
 
 ## Levantarlo localmente
 
@@ -78,5 +83,5 @@ del juego de prueba.
 
 - Reemplazar el usuario demo por identidad real.
 - Diseñar perfiles y un espacio personal separado de la landing pública.
-- Permitir respuestas en hilo a las entradas.
+- Evaluar respuestas anidadas, menciones y moderación para los hilos.
 - Incorporar búsqueda de juegos y usuarios, respetando la barrera anti-spoilers.
