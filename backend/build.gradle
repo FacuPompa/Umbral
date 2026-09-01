@@ -33,6 +33,10 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    // FlyWay - Migraciones de base de datos
+    implementation 'org.springframework.boot:spring-boot-starter-flyway'
+    implementation 'org.flywaydb:flyway-database-postgresql'
+
 
     // Tests de integración con PostgreSQL temporal
     testImplementation platform('org.testcontainers:testcontainers-bom:2.0.5')

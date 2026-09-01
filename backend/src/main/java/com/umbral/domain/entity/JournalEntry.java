@@ -20,6 +20,10 @@ public class JournalEntry {
     @JoinColumn(name = "checkpoint_id", nullable = false)
     private Checkpoint checkpoint;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private JournalEntryType type;
+
     @Column(nullable = false, length = 5000)
     private String content;
 
@@ -28,9 +32,10 @@ public class JournalEntry {
 
     protected JournalEntry(){}
 
-    public JournalEntry(User author, Checkpoint checkpoint, String content) {
+    public JournalEntry(User author, Checkpoint checkpoint, JournalEntryType type, String content) {
         this.author = author;
         this.checkpoint = checkpoint;
+        this.type = type;
         this.content = content;
         this.createdAt = Instant.now();
     }
@@ -53,5 +58,9 @@ public class JournalEntry {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public JournalEntryType getType() {
+        return type;
     }
 }

@@ -49,7 +49,12 @@ public class JournalEntryService {
             throw new AuthorCannotPublishBeyondProgressException("No podés publicar sobre un checkpoint al que todavía no llegaste.");
         }
 
-        JournalEntry entry = new JournalEntry(author, checkpoint, request.content());
+        JournalEntry entry = new JournalEntry(
+                author,
+                checkpoint,
+                request.type(),
+                request.content()
+        );
 
         JournalEntry savedEntry = journalEntryRepository.save(entry);
 
@@ -78,6 +83,7 @@ public class JournalEntryService {
                 entry.getAuthor().getHandle(),
                 entry.getCheckpoint().getGame().getId(),
                 entry.getCheckpoint().getLabel(),
+                entry.getType(),
                 entry.getContent(),
                 entry.getCreatedAt()
         );

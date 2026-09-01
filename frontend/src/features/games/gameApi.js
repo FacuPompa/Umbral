@@ -57,13 +57,13 @@ export async function fetchJournalEntries(gameId) {
   return response.json();
 }
 
-export async function createJournalEntry(checkpointId, content) {
+export async function createJournalEntry(checkpointId, type, content) {
   const response = await fetch('/api/me/journal-entries', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ checkpointId, content }),
+    body: JSON.stringify({ checkpointId, type, content }),
   });
 
   if (!response.ok) {
