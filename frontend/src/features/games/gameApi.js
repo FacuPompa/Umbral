@@ -72,3 +72,29 @@ export async function createJournalEntry(checkpointId, type, content) {
 
   return response.json();
 }
+
+export async function fetchJournalReplies(entryId) {
+  const response = await fetch(`/api/journal-entries/${entryId}/replies`);
+
+  if (!response.ok) {
+    throw new Error('No se pudieron cargar las respuestas.');
+  }
+
+  return response.json();
+}
+
+export async function createJournalReply(entryId, content) {
+  const response = await fetch(`/api/me/journal-entries/${entryId}/replies`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ content }),
+  });
+
+  if (!response.ok) {
+    throw new Error('No se pudo publicar la respuesta.');
+  }
+
+  return response.json();
+}
