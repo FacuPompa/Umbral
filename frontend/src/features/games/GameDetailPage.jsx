@@ -10,6 +10,7 @@ import {
   fetchJournalReplies,
   updateGameProgress,
 } from './gameApi';
+import { getGameArtwork, getGameInitials } from './gameArtwork';
 
 function formatEntryDate(createdAt) {
   return new Intl.DateTimeFormat('es-AR', {
@@ -223,20 +224,29 @@ export default function GameDetailPage() {
   const availableCheckpoints = progress
     ? checkpoints.filter((checkpoint) => checkpoint.position <= progress.position)
     : [];
+  const artwork = getGameArtwork(game.title);
 
   return (
     <div className="page-main detail-page">
       <Link className="detail-back" to="/">← Volver al catálogo</Link>
 
       <section className="game-hero">
+        <div className="game-detail-artwork">
+          {artwork ? (
+            <img src={artwork} alt={`Arte de ${game.title}`} />
+          ) : (
+            <span aria-hidden="true">{getGameInitials(game.title)}</span>
+          )}
+        </div>
         <div className="game-hero-copy">
-          <p className="eyebrow">Juego</p>
           <h1>{game.title}</h1>
           <p>{game.description}</p>
         </div>
         <aside className="progress-summary" aria-label="Resumen de tu avance">
-          <p className="eyebrow">Tu avance guardado</p>
-          <strong>{progress ? progress.checkpointLabel : 'Todavía no elegiste un tramo'}</strong>
+          <dl>
+            <dt>Tu avance guardado</dt>
+            <dd>{progress ? progress.checkpointLabel : 'Todavía no elegiste un tramo'}</dd>
+          </dl>
           <p>{progress ? 'Esto define las conversaciones que podés leer y los tramos sobre los que podés publicar.' : 'Elegí el último tramo que jugaste para desbloquear conversaciones seguras.'}</p>
         </aside>
       </section>
@@ -244,7 +254,6 @@ export default function GameDetailPage() {
       <div className="detail-workspace">
         <section className="progress-panel" aria-labelledby="checkpoint-title">
           <header className="panel-heading">
-            <p className="eyebrow">Tu progreso</p>
             <h2 id="checkpoint-title">¿Hasta dónde llegaste?</h2>
             <p>Marcá el último tramo que alcanzaste. Podés actualizarlo cuando avances.</p>
           </header>
@@ -279,8 +288,8 @@ export default function GameDetailPage() {
         <div className="conversation-column">
           <section className="compose-panel" aria-labelledby="entry-title">
             <header className="panel-heading">
-              <p className="eyebrow">Nueva entrada</p>
               <h2 id="entry-title">Compartí lo que ya conocés</h2>
+              <p>Publicá dentro del límite que marca tu progreso.</p>
             </header>
             {!progress && <p className="status-message">Marcá tu avance antes de publicar una entrada.</p>}
             {progress && !loadingCheckpoints && !checkpointsError && (
@@ -318,8 +327,8 @@ export default function GameDetailPage() {
 
           <section className="feed-panel" aria-labelledby="journal-title">
             <header className="panel-heading">
-              <p className="eyebrow">Bitácora segura</p>
               <h2 id="journal-title">Conversaciones que ya podés leer</h2>
+              <p>El servidor filtra cada entrada antes de enviarla.</p>
             </header>
             {loadingJournalEntries && <p className="status-message">Cargando entradas...</p>}
             {journalEntriesError && <p className="status-message status-message-error">{journalEntriesError}</p>}

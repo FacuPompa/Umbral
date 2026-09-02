@@ -28,10 +28,11 @@ export default function AppShell() {
   return (
     <div className="app-shell">
       <header className="site-header">
-        <Link className="site-brand" to="/">Umbral</Link>
+        <Link className="site-brand" to="/">UMBRAL/</Link>
 
         <nav className="site-nav" aria-label="Navegación principal">
-          <Link to="/#catalogo">Catálogo</Link>
+          <a href="/#catalogo">Catálogo</a>
+          <a href="/#como-funciona">Cómo funciona</a>
           <button
             className="theme-toggle"
             type="button"
@@ -44,14 +45,8 @@ export default function AppShell() {
             </span>
             <span>{isDarkTheme ? 'Claro' : 'Oscuro'}</span>
           </button>
-          <button className="future-access future-access-login" disabled type="button">
-            Iniciar sesión
-            <span>Próximamente</span>
-          </button>
-          <button className="future-access future-access-register" disabled type="button">
-            Crear cuenta
-            <span>Próximamente</span>
-          </button>
+          <button className="future-access future-access-login" disabled title="Próximamente" type="button">Iniciar sesión</button>
+          <button className="future-access future-access-register" disabled title="Próximamente" type="button">Crear cuenta</button>
         </nav>
       </header>
 
