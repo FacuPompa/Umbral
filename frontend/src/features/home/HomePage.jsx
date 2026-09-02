@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import HeroGameCarousel from '../games/HeroGameCarousel';
 import { fetchGames } from '../games/gameApi';
+import { getGameArtwork, getGameInitials } from '../games/gameArtwork';
 
 const conversationTypes = [
-  ['Reflexiones', 'Para compartir qué te dejó un tramo sin tener que calificarlo.'],
-  ['Dudas', 'Para pedir una mano sin recibir respuestas de más.'],
-  ['Teorías', 'Para conectar pistas con otras personas que llegaron hasta ahí.'],
-  ['Reseñas', 'Para mirar una experiencia completa cuando ya estés listo.'],
+  ['Dudas', 'Pedí una mano en el punto exacto donde estás jugando.'],
+  ['Reflexiones', 'Contá qué te dejó una escena o un tramo de la historia.'],
+  ['Teorías', 'Conectá pistas con otras personas que llegaron hasta ahí.'],
+  ['Reseñas', 'Compartí una mirada completa cuando termines el juego.'],
 ];
 
 export default function HomePage() {
@@ -32,69 +34,80 @@ export default function HomePage() {
     <main className="landing-page">
       <section className="landing-hero" aria-labelledby="hero-title">
         <div className="landing-hero-copy">
-          <p className="eyebrow">Comunidad sin spoilers</p>
-          <h1 id="hero-title">Conversá sobre un juego sin enterarte de lo que sigue.</h1>
-          <p className="hero-description">
-            En Umbral cada conversación tiene un límite narrativo. Marcás hasta dónde jugaste y te mostramos solo lo que ya podés conocer.
+          <h1 id="hero-title">Hablá de juegos sin adelantarte la historia.</h1>
+          <p>
+            Umbral es una comunidad para preguntar, responder y compartir lo que te dejó
+            un juego. Marcá hasta dónde llegaste y el resto queda fuera de vista.
           </p>
           <div className="hero-actions">
-            <a className="button button-accent" href="#catalogo">Explorar catálogo</a>
-            <a className="text-action" href="#como-funciona">Ver cómo funciona <span aria-hidden="true">↓</span></a>
+            <a className="button button-primary-link" href="#catalogo">Explorar juegos</a>
+            <a className="text-action" href="#como-funciona">Cómo funciona</a>
           </div>
         </div>
 
-        <aside className="mechanism-example" aria-label="Ejemplo conceptual de cómo funciona el filtro de spoilers">
-          <p className="eyebrow">El límite lo pone tu partida</p>
-          <div className="mechanism-flow">
-            <p>Tu progreso</p>
-            <strong>Palacio de Madarame</strong>
-            <span aria-hidden="true">↓</span>
-            <p>determina</p>
-            <strong>Lo que podés leer</strong>
-            <small>Publicaciones hasta ese checkpoint</small>
-          </div>
-        </aside>
+        <div className="landing-hero-carousel">
+          {loading && <div className="hero-carousel-placeholder">Cargando catálogo...</div>}
+          {error && <div className="hero-carousel-placeholder">El catálogo no está disponible.</div>}
+          {!loading && !error && <HeroGameCarousel games={games} />}
+        </div>
       </section>
 
-      <section className="landing-section explanation-section" id="como-funciona" aria-labelledby="spoiler-title">
-        <header className="section-intro">
-          <p className="eyebrow">Cómo evita spoilers</p>
-          <h2 id="spoiler-title">El límite lo pone tu partida.</h2>
+      <section className="landing-section" id="como-funciona" aria-labelledby="safe-title">
+        <header className="section-heading">
+          <h2 id="safe-title">Tu progreso decide qué aparece</h2>
+          <p>No dependemos solo de que alguien recuerde escribir “spoiler” en el título.</p>
         </header>
-        <div className="section-content">
-          <p className="section-lead">
-            No confiamos solo en una etiqueta. Umbral compara el punto de la historia de cada publicación con el avance que registraste antes de mostrarla.
+        <ol className="safety-steps">
+          <li>
+            <span>01</span>
+            <div>
+              <h3>Elegís un juego</h3>
+              <p>Entrás al detalle y ves los tramos narrativos disponibles.</p>
+            </div>
+          </li>
+          <li>
+            <span>02</span>
+            <div>
+              <h3>Guardás tu avance</h3>
+              <p>Indicás el último checkpoint que alcanzaste en tu partida.</p>
+            </div>
+          </li>
+          <li>
+            <span>03</span>
+            <div>
+              <h3>Umbral filtra el resto</h3>
+              <p>El servidor entrega solamente publicaciones que ya son seguras para vos.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section className="community-section" aria-labelledby="community-title">
+        <div className="community-intro">
+          <h2 id="community-title">Un foro, no una lista de puntajes</h2>
+          <p>
+            Las reseñas tienen lugar, pero el centro son las conversaciones: preguntar,
+            responder y pensar una historia con otras personas.
           </p>
-          <ol className="steps-list">
-            <li><span>01</span>Elegí un juego.</li>
-            <li><span>02</span>Marcá el último tramo que jugaste.</li>
-            <li><span>03</span>Leé o participá solo desde ahí.</li>
-          </ol>
         </div>
-      </section>
-
-      <section className="landing-section conversation-section" aria-labelledby="conversation-title">
-        <header className="section-intro">
-          <p className="eyebrow">Para hablar de juegos</p>
-          <h2 id="conversation-title">No todo es una reseña.</h2>
-        </header>
-        <div className="conversation-types">
-          {conversationTypes.map(([title, description]) => (
-            <article key={title}>
+        <ol className="conversation-list">
+          {conversationTypes.map(([title, description], index) => (
+            <li key={title}>
+              <span>{String(index + 1).padStart(2, '0')}</span>
               <h3>{title}</h3>
               <p>{description}</p>
-            </article>
+            </li>
           ))}
-        </div>
+        </ol>
       </section>
 
       <section className="catalog-section" id="catalogo" aria-labelledby="catalog-title">
-        <header className="catalog-heading">
+        <header className="section-heading section-heading-row">
           <div>
-            <p className="eyebrow">Catálogo inicial</p>
-            <h2 id="catalog-title">Elegí dónde cruzar el umbral.</h2>
+            <h2 id="catalog-title">Juegos en Umbral</h2>
+            <p>Abrí un juego para registrar tu progreso y entrar a su conversación.</p>
           </div>
-          <p>Los juegos disponibles se cargan desde Umbral. Al abrir uno, podés indicar tu avance y entrar a su conversación segura.</p>
+          <span>{games.length} {games.length === 1 ? 'juego disponible' : 'juegos disponibles'}</span>
         </header>
 
         {loading && <p className="catalog-message">Cargando juegos...</p>}
@@ -102,33 +115,31 @@ export default function HomePage() {
         {!loading && !error && games.length === 0 && <p className="catalog-message">Todavía no hay juegos disponibles.</p>}
         {!loading && !error && games.length > 0 && (
           <ol className="catalog-list">
-            {games.map((game, index) => (
-              <li key={game.id} className="catalog-row">
-                <span className="catalog-index">{String(index + 1).padStart(2, '0')}</span>
-                <div>
-                  <h3>{game.title}</h3>
-                  <p>{game.description}</p>
-                </div>
-                <Link className="row-action" to={`/games/${game.id}`}>Ver juego <span aria-hidden="true">→</span></Link>
-              </li>
-            ))}
+            {games.map((game) => {
+              const artwork = getGameArtwork(game.title);
+
+              return (
+                <li key={game.id}>
+                  <article className="catalog-list-item">
+                    <Link className="catalog-list-artwork" to={`/games/${game.id}`} aria-label={`Abrir ${game.title}`}>
+                      {artwork ? <img src={artwork} alt={`Arte de ${game.title}`} /> : <span>{getGameInitials(game.title)}</span>}
+                    </Link>
+                    <div className="catalog-list-copy">
+                      <h3>{game.title}</h3>
+                      <p>{game.description}</p>
+                    </div>
+                    <Link className="text-action catalog-list-action" to={`/games/${game.id}`}>Ver juego</Link>
+                  </article>
+                </li>
+              );
+            })}
           </ol>
         )}
       </section>
 
-      <section className="landing-closing" aria-labelledby="closing-title">
-        <div>
-          <p className="eyebrow">Una comunidad en formación</p>
-          <h2 id="closing-title">Una historia compartida también puede cuidarse.</h2>
-        </div>
-        <div>
-          <a className="button button-accent" href="#catalogo">Explorar juegos</a>
-          <p>Las cuentas y perfiles llegarán más adelante. Por ahora, podés conocer cómo funciona Umbral desde cada juego.</p>
-        </div>
-      </section>
-
       <footer className="site-footer">
-        <p>Umbral · conversaciones sobre juegos narrativos, sin adelantarte nada.</p>
+        <strong>Umbral</strong>
+        <p>Conversaciones sobre juegos narrativos, sin adelantarte nada.</p>
       </footer>
     </main>
   );
