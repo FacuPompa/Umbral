@@ -27,6 +27,7 @@ export default function AppShell() {
 
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">Saltar al contenido</a>
       <header className="site-header">
         <Link className="site-brand" to="/">UMBRAL/</Link>
 
@@ -37,7 +38,6 @@ export default function AppShell() {
             className="theme-toggle"
             type="button"
             aria-label={isDarkTheme ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
-            aria-pressed={!isDarkTheme}
             onClick={toggleTheme}
           >
             <span aria-hidden="true" className="theme-toggle-track">

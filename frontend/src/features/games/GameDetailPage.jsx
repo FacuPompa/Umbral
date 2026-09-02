@@ -210,14 +210,14 @@ export default function GameDetailPage() {
     }
   }
 
-  if (loading) return <div className="page-state">Cargando juego...</div>;
-  if (error) return <div className="page-state page-state-error">{error}</div>;
+  if (loading) return <main className="page-state" id="main-content">Cargando juego...</main>;
+  if (error) return <main className="page-state page-state-error" id="main-content">{error}</main>;
   if (!game) {
     return (
-      <div className="page-state">
+      <main className="page-state" id="main-content">
         <p>Ese juego no existe en el catálogo.</p>
         <Link className="detail-back" to="/">Volver al inicio <span aria-hidden="true">→</span></Link>
-      </div>
+      </main>
     );
   }
 
@@ -227,7 +227,7 @@ export default function GameDetailPage() {
   const artwork = getGameArtwork(game.title);
 
   return (
-    <div className="page-main detail-page">
+    <main className="page-main detail-page" id="main-content">
       <Link className="detail-back" to="/">← Volver al catálogo</Link>
 
       <section className="game-hero">
@@ -408,6 +408,6 @@ export default function GameDetailPage() {
           </section>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

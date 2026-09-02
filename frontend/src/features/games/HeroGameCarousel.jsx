@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
@@ -11,12 +11,24 @@ export default function HeroGameCarousel({ games }) {
     ...games.map((game) => ({ ...game, artwork: getGameArtwork(game.title), isPreview: false })),
     ...catalogPreviewSlides.map((slide) => ({ ...slide, isPreview: true })),
   ];
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => (
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  ));
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updatePreference = (event) => setPrefersReducedMotion(event.matches);
+
+    mediaQuery.addEventListener('change', updatePreference);
+    return () => mediaQuery.removeEventListener('change', updatePreference);
+  }, []);
+
   const plugins = useMemo(
     () => [
       WheelGesturesPlugin(),
-      Autoplay({ delay: 5000, stopOnInteraction: false }),
+      ...(!prefersReducedMotion ? [Autoplay({ delay: 5000, stopOnInteraction: false })] : []),
     ],
-    [],
+    [prefersReducedMotion],
   );
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { align: 'start', containScroll: 'trimSnaps', loop: true },
