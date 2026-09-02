@@ -31,7 +31,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="landing-page">
+    <main className="landing-page" id="main-content">
       <section className="landing-hero" aria-labelledby="hero-title">
         <div className="landing-hero-copy">
           <h1 id="hero-title">Hablá de juegos sin adelantarte la historia.</h1>
