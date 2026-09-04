@@ -79,6 +79,13 @@ El frontend queda en `http://localhost:5173` y el backend usa el puerto `8080`.
 La ruta `/` muestra la presentación y el catálogo; `/games/1` abre el detalle
 del juego de prueba.
 
+Para verificar el frontend antes de abrir una Pull Request:
+
+```bash
+cd frontend
+npm run check
+```
+
 ## Lo próximo
 
 - Reemplazar el usuario demo por identidad real.
