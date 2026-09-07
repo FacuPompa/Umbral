@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
+import { useAuth } from '../auth/useAuth';
 import {
   createJournalEntry,
   createJournalReply,
@@ -29,6 +30,8 @@ const entryTypeLabels = {
 
 export default function GameDetailPage() {
   const { gameId } = useParams();
+  const location = useLocation();
+  const { user, loading: loadingUser } = useAuth();
   const [game, setGame] = useState(null);
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,6 +56,8 @@ export default function GameDetailPage() {
   const [replyContent, setReplyContent] = useState('');
   const [savingReply, setSavingReply] = useState(false);
   const [savingReplyError, setSavingReplyError] = useState(null);
+  const [pendingCheckpoint, setPendingCheckpoint] = useState(null);
+  const [accountPrompt, setAccountPrompt] = useState(null);
 
   const numericGameId = Number(gameId);
 
@@ -75,7 +80,7 @@ export default function GameDetailPage() {
       try {
         const [gamesFromApi, progressFromApi] = await Promise.all([
           fetchGames(),
-          fetchGameProgress(),
+          user ? fetchGameProgress() : Promise.resolve([]),
         ]);
         const requestedGame = gamesFromApi.find((catalogGame) => catalogGame.id === numericGameId);
 
@@ -93,14 +98,17 @@ export default function GameDetailPage() {
     }
 
     loadGame();
-  }, [numericGameId]);
+  }, [numericGameId, user]);
 
   useEffect(() => {
     if (!game) return;
 
     loadCheckpoints(game.id);
-    loadJournalEntries(game.id);
-  }, [game]);
+
+    if (user) {
+      loadJournalEntries(game.id);
+    }
+  }, [game, user]);
 
   async function loadCheckpoints(id) {
     setLoadingCheckpoints(true);
@@ -131,14 +139,28 @@ export default function GameDetailPage() {
     }
   }
 
-  async function selectCheckpoint(checkpoint) {
+  function requestCheckpointChange(checkpoint) {
+    if (!user) {
+      setAccountPrompt('guardar tu avance');
+      return;
+    }
+
+    if (progress?.checkpointId === checkpoint.id) return;
+    setSavingProgressError(null);
+    setPendingCheckpoint(checkpoint);
+  }
+
+  async function confirmCheckpointChange() {
+    if (!pendingCheckpoint) return;
+
     setSavingProgress(true);
     setSavingProgressError(null);
     try {
-      const savedProgress = await updateGameProgress(game.id, checkpoint.id);
+      const savedProgress = await updateGameProgress(game.id, pendingCheckpoint.id);
       setProgress(savedProgress);
       setEntryCheckpointId(String(savedProgress.checkpointId));
       await loadJournalEntries(game.id);
+      setPendingCheckpoint(null);
     } catch (requestError) {
       setSavingProgressError(requestError.message);
     } finally {
@@ -210,7 +232,7 @@ export default function GameDetailPage() {
     }
   }
 
-  if (loading) return <main className="page-state" id="main-content">Cargando juego...</main>;
+  if (loading || loadingUser) return <main className="page-state" id="main-content">Cargando juego...</main>;
   if (error) return <main className="page-state page-state-error" id="main-content">{error}</main>;
   if (!game) {
     return (
@@ -245,9 +267,9 @@ export default function GameDetailPage() {
         <aside className="progress-summary" aria-label="Resumen de tu avance">
           <dl>
             <dt>Tu avance guardado</dt>
-            <dd>{progress ? progress.checkpointLabel : 'Todavía no elegiste un tramo'}</dd>
+            <dd>{user ? (progress ? progress.checkpointLabel : 'Todavía no elegiste un tramo') : 'Iniciá sesión para guardar avance'}</dd>
           </dl>
-          <p>{progress ? 'Esto define las conversaciones que podés leer y los tramos sobre los que podés publicar.' : 'Elegí el último tramo que jugaste para desbloquear conversaciones seguras.'}</p>
+          <p>{user && progress ? 'Esto define las conversaciones que podés leer y los tramos sobre los que podés publicar.' : 'Tu avance personal define las conversaciones que Umbral puede mostrarte sin spoilers.'}</p>
         </aside>
       </section>
 
@@ -268,7 +290,7 @@ export default function GameDetailPage() {
                     <button
                       className={`checkpoint-button ${isCurrentCheckpoint ? 'checkpoint-button-current' : ''}`}
                       disabled={savingProgress}
-                      onClick={() => selectCheckpoint(checkpoint)}
+                      onClick={() => requestCheckpointChange(checkpoint)}
                       type="button"
                     >
                       <span className="checkpoint-position">{String(checkpoint.position).padStart(2, '0')}</span>
@@ -291,8 +313,14 @@ export default function GameDetailPage() {
               <h2 id="entry-title">Compartí lo que ya conocés</h2>
               <p>Publicá dentro del límite que marca tu progreso.</p>
             </header>
-            {!progress && <p className="status-message">Marcá tu avance antes de publicar una entrada.</p>}
-            {progress && !loadingCheckpoints && !checkpointsError && (
+            {!user && (
+              <div className="account-callout">
+                <p>Para publicar una reflexión, duda, teoría o reseña necesitás una cuenta y un avance guardado.</p>
+                <button className="button-primary" onClick={() => setAccountPrompt('publicar una entrada')} type="button">Crear cuenta para publicar</button>
+              </div>
+            )}
+            {user && !progress && <p className="status-message">Marcá tu avance antes de publicar una entrada.</p>}
+            {user && progress && !loadingCheckpoints && !checkpointsError && (
               <form className="entry-form" onSubmit={createEntry}>
                 <label>
                   Esta entrada habla hasta
@@ -322,7 +350,7 @@ export default function GameDetailPage() {
                 </div>
               </form>
             )}
-            {savingEntryError && <p className="status-message status-message-error">{savingEntryError}</p>}
+            {user && savingEntryError && <p className="status-message status-message-error">{savingEntryError}</p>}
           </section>
 
           <section className="feed-panel" aria-labelledby="journal-title">
@@ -330,12 +358,18 @@ export default function GameDetailPage() {
               <h2 id="journal-title">Conversaciones que ya podés leer</h2>
               <p>El servidor filtra cada entrada antes de enviarla.</p>
             </header>
-            {loadingJournalEntries && <p className="status-message">Cargando entradas...</p>}
-            {journalEntriesError && <p className="status-message status-message-error">{journalEntriesError}</p>}
-            {!loadingJournalEntries && !journalEntriesError && journalEntries.length === 0 && (
+            {!user && (
+              <div className="account-callout">
+                <p>Las conversaciones se filtran según el tramo que cada persona alcanzó. Creá una cuenta para guardar el tuyo y ver solo lo que ya conocés.</p>
+                <button className="button-secondary" onClick={() => setAccountPrompt('leer conversaciones seguras')} type="button">Crear cuenta</button>
+              </div>
+            )}
+            {user && loadingJournalEntries && <p className="status-message">Cargando entradas...</p>}
+            {user && journalEntriesError && <p className="status-message status-message-error">{journalEntriesError}</p>}
+            {user && !loadingJournalEntries && !journalEntriesError && journalEntries.length === 0 && (
               <p className="empty-feed">Por ahora no hay nada que podamos mostrarte sin spoilearte. Volvé cuando avances un poco más.</p>
             )}
-            {!loadingJournalEntries && !journalEntriesError && journalEntries.length > 0 && (
+            {user && !loadingJournalEntries && !journalEntriesError && journalEntries.length > 0 && (
               <ol className="journal-list">
                 {journalEntries.map((entry) => {
                   const isRepliesOpen = openRepliesEntryId === entry.id;
@@ -408,6 +442,35 @@ export default function GameDetailPage() {
           </section>
         </div>
       </div>
+
+      {pendingCheckpoint && (
+        <div aria-labelledby="confirm-progress-title" aria-modal="true" className="dialog-backdrop" role="dialog">
+          <section className="dialog-panel">
+            <h2 id="confirm-progress-title">¿Guardar este avance?</h2>
+            <p>Vas a marcar <strong>{pendingCheckpoint.label}</strong> como el último tramo que alcanzaste. Umbral ajustará las conversaciones disponibles a partir de este punto.</p>
+            {savingProgressError && <p className="form-error" role="alert">{savingProgressError}</p>}
+            <div className="dialog-actions">
+              <button className="button-secondary" disabled={savingProgress} onClick={() => setPendingCheckpoint(null)} type="button">Cancelar</button>
+              <button className="button-primary" disabled={savingProgress} onClick={confirmCheckpointChange} type="button">
+                {savingProgress ? 'Guardando...' : 'Guardar avance'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {accountPrompt && (
+        <div aria-labelledby="account-prompt-title" aria-modal="true" className="dialog-backdrop" role="dialog">
+          <section className="dialog-panel">
+            <h2 id="account-prompt-title">Creá una cuenta para {accountPrompt}</h2>
+            <p>Con una cuenta podés guardar tu punto del juego y Umbral muestra solo las conversaciones que ya son seguras para vos.</p>
+            <div className="dialog-actions">
+              <button className="button-secondary" onClick={() => setAccountPrompt(null)} type="button">Seguir mirando</button>
+              <Link className="button-primary" state={{ from: location }} to="/register">Crear cuenta</Link>
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   );
 }

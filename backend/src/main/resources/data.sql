@@ -27,8 +27,14 @@ CROSS JOIN (
 WHERE game.title = 'Persona 5 Royal'
 ON CONFLICT (game_id, position) DO NOTHING;
 
-INSERT INTO app_users (id, handle)
-VALUES (1, 'umbral-demo')
+INSERT INTO app_users (id, handle, email, password_hash, role)
+VALUES (
+    1,
+    'umbral-demo',
+    'umbral-demo@demo.umbral.local',
+    '$2y$12$1k4vwXDNqHvS13SHLPyuK.Hh/sXN7TacnhzDMvJ3SnzWbKCV/o8ya',
+    'MEMBER'
+)
 ON CONFLICT DO NOTHING;
 
 SELECT setval(
@@ -36,8 +42,13 @@ SELECT setval(
     (SELECT MAX(id) FROM app_users),
     true
 );
-INSERT INTO app_users (handle)
-VALUES ('umbral-author-demo')
+INSERT INTO app_users (handle, email, password_hash, role)
+VALUES (
+    'umbral-author-demo',
+    'umbral-author-demo@demo.umbral.local',
+    '$2y$12$1k4vwXDNqHvS13SHLPyuK.Hh/sXN7TacnhzDMvJ3SnzWbKCV/o8ya',
+    'MEMBER'
+)
 ON CONFLICT (handle) DO NOTHING;
 
 INSERT INTO user_game_progress (user_id, game_id, checkpoint_id)

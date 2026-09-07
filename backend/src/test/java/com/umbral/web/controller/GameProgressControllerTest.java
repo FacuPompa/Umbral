@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,8 @@ import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -25,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Import(PostgresTestConfiguration.class)
 @Transactional
+@WithMockUser(username = "umbral-demo")
 class GameProgressControllerTest {
 
     @Autowired
@@ -47,6 +51,8 @@ class GameProgressControllerTest {
         Checkpoint kamoshida = checkpoints.get(1);
 
         mockMvc.perform(put("/api/me/games/{gameId}/progress", persona5Royal.getId())
+                        .with(user("umbral-demo"))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -63,6 +69,8 @@ class GameProgressControllerTest {
     @Test
     void rejectsNonPositiveCheckpointId() throws Exception {
         mockMvc.perform(put("/api/me/games/{gameId}/progress", 1L)
+                        .with(user("umbral-demo"))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                             {
@@ -75,6 +83,8 @@ class GameProgressControllerTest {
     @Test
     void returnsNotFoundWhenGameDoesNotExist() throws Exception {
         mockMvc.perform(put("/api/me/games/{gameId}/progress", 999999L)
+                        .with(user("umbral-demo"))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -92,6 +102,8 @@ class GameProgressControllerTest {
                 .orElseThrow();
 
         mockMvc.perform(put("/api/me/games/{gameId}/progress", persona5Royal.getId())
+                        .with(user("umbral-demo"))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -116,6 +128,8 @@ class GameProgressControllerTest {
         );
 
         mockMvc.perform(put("/api/me/games/{gameId}/progress", persona5Royal.getId())
+                        .with(user("umbral-demo"))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -136,6 +150,8 @@ class GameProgressControllerTest {
                 .get(1);
 
         mockMvc.perform(put("/api/me/games/{gameId}/progress", persona5Royal.getId())
+                .with(user("umbral-demo"))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
@@ -144,7 +160,7 @@ class GameProgressControllerTest {
                         """.formatted(kamoshida.getId())))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/me/game-progress"))
+        mockMvc.perform(get("/api/me/game-progress").with(user("umbral-demo")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].gameId").value(persona5Royal.getId()))
                 .andExpect(jsonPath("$[0].checkpointId").value(kamoshida.getId()))
