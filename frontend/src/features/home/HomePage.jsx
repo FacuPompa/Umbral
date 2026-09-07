@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import LoadingIndicator from '../../components/LoadingIndicator';
 import HeroGameCarousel from '../games/HeroGameCarousel';
 import { fetchGames } from '../games/gameApi';
 import { getGameArtwork, getGameInitials } from '../games/gameArtwork';
@@ -46,7 +47,7 @@ export default function HomePage() {
         </div>
 
         <div className="landing-hero-carousel">
-          {loading && <div className="hero-carousel-placeholder">Cargando catálogo...</div>}
+          {loading && <div className="hero-carousel-placeholder"><LoadingIndicator label="Cargando catálogo" /></div>}
           {error && <div className="hero-carousel-placeholder">El catálogo no está disponible.</div>}
           {!loading && !error && <HeroGameCarousel games={games} />}
         </div>
@@ -110,13 +111,13 @@ export default function HomePage() {
           <span>{games.length} {games.length === 1 ? 'juego disponible' : 'juegos disponibles'}</span>
         </header>
 
-        {loading && <p className="catalog-message">Cargando juegos...</p>}
+        {loading && <div className="catalog-message"><LoadingIndicator label="Cargando juegos" /></div>}
         {error && <p className="catalog-message catalog-message-error">{error}</p>}
         {!loading && !error && games.length === 0 && <p className="catalog-message">Todavía no hay juegos disponibles.</p>}
         {!loading && !error && games.length > 0 && (
           <ol className="catalog-list">
             {games.map((game) => {
-              const artwork = getGameArtwork(game.title);
+              const artwork = game.coverImageUrl ?? getGameArtwork(game.title);
 
               return (
                 <li key={game.id}>
@@ -139,7 +140,10 @@ export default function HomePage() {
 
       <footer className="site-footer">
         <strong>Umbral</strong>
-        <p>Conversaciones sobre juegos narrativos, sin adelantarte nada.</p>
+        <p>
+          Conversaciones sobre juegos narrativos, sin adelantarte nada. Datos e imágenes de{' '}
+          <a href="https://rawg.io/" rel="noreferrer" target="_blank">RAWG</a>.
+        </p>
       </footer>
     </main>
   );

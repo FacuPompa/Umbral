@@ -31,3 +31,33 @@ export function fetchJournalReplies(entryId) {
 export function createJournalReply(entryId, content) {
   return sendJson(`/api/me/journal-entries/${entryId}/replies`, 'POST', { content }, 'No se pudo publicar la respuesta.');
 }
+
+export function searchExternalGames(query) {
+  return getJson(`/api/game-suggestions/search?query=${encodeURIComponent(query)}`, 'No se pudo buscar juegos ahora.');
+}
+
+export function submitGameSuggestion(rawgGameId) {
+  return sendJson('/api/game-suggestions', 'POST', { rawgGameId }, 'No se pudo enviar la sugerencia.');
+}
+
+export function fetchPendingGameSuggestions() {
+  return getJson('/api/moderation/game-suggestions', 'No se pudieron cargar las sugerencias pendientes.');
+}
+
+export function approveGameSuggestion(suggestionId, safeDescription) {
+  return sendJson(
+    `/api/moderation/game-suggestions/${suggestionId}/approve`,
+    'POST',
+    { safeDescription },
+    'No se pudo aprobar la sugerencia.',
+  );
+}
+
+export function rejectGameSuggestion(suggestionId) {
+  return sendJson(
+    `/api/moderation/game-suggestions/${suggestionId}/reject`,
+    'POST',
+    {},
+    'No se pudo rechazar la sugerencia.',
+  );
+}

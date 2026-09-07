@@ -132,4 +132,31 @@ class AuthenticationControllerTest {
         mockMvc.perform(get("/api/me/game-progress"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    void acceptsPasswordsWithEightCharactersAndRejectsShorterOnes() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "handle": "ocho",
+                                  "email": "ocho@example.com",
+                                  "password": "clave123"
+                                }
+                                """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/auth/register")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "handle": "siete",
+                                  "email": "siete@example.com",
+                                  "password": "clave12"
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
 }

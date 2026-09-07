@@ -12,6 +12,7 @@ import {
   updateGameProgress,
 } from './gameApi';
 import { getGameArtwork, getGameInitials } from './gameArtwork';
+import LoadingIndicator from '../../components/LoadingIndicator';
 
 function formatEntryDate(createdAt) {
   return new Intl.DateTimeFormat('es-AR', {
@@ -232,7 +233,7 @@ export default function GameDetailPage() {
     }
   }
 
-  if (loading || loadingUser) return <main className="page-state" id="main-content">Cargando juego...</main>;
+  if (loading || loadingUser) return <main className="page-state" id="main-content"><LoadingIndicator label="Cargando juego" /></main>;
   if (error) return <main className="page-state page-state-error" id="main-content">{error}</main>;
   if (!game) {
     return (
@@ -246,7 +247,7 @@ export default function GameDetailPage() {
   const availableCheckpoints = progress
     ? checkpoints.filter((checkpoint) => checkpoint.position <= progress.position)
     : [];
-  const artwork = getGameArtwork(game.title);
+  const artwork = game.coverImageUrl ?? getGameArtwork(game.title);
 
   return (
     <main className="page-main detail-page" id="main-content">
@@ -279,7 +280,7 @@ export default function GameDetailPage() {
             <h2 id="checkpoint-title">¿Hasta dónde llegaste?</h2>
             <p>Marcá el último tramo que alcanzaste. Podés actualizarlo cuando avances.</p>
           </header>
-          {loadingCheckpoints && <p className="status-message">Cargando índice...</p>}
+          {loadingCheckpoints && <div className="status-message"><LoadingIndicator label="Cargando checkpoints" /></div>}
           {checkpointsError && <p className="status-message status-message-error">{checkpointsError}</p>}
           {!loadingCheckpoints && !checkpointsError && (
             <ol className="checkpoint-list">
@@ -296,7 +297,7 @@ export default function GameDetailPage() {
                       <span className="checkpoint-position">{String(checkpoint.position).padStart(2, '0')}</span>
                       <span className="checkpoint-label">{checkpoint.label}</span>
                       <span className="checkpoint-state">
-                        {isCurrentCheckpoint && (savingProgress ? 'Guardando' : 'Actual')}
+                        {isCurrentCheckpoint && (savingProgress ? <LoadingIndicator label="Guardando avance" /> : 'Actual')}
                       </span>
                     </button>
                   </li>
@@ -345,7 +346,7 @@ export default function GameDetailPage() {
                 <div className="form-footer">
                   <p>Solo podés publicar sobre checkpoints que ya alcanzaste.</p>
                   <button className="button-primary" disabled={savingEntry || !entryCheckpointId || !entryType || !entryContent.trim()} type="submit">
-                    {savingEntry ? 'Publicando...' : 'Publicar'}
+                    {savingEntry ? <LoadingIndicator label="Publicando entrada" /> : 'Publicar'}
                   </button>
                 </div>
               </form>
@@ -364,7 +365,7 @@ export default function GameDetailPage() {
                 <button className="button-secondary" onClick={() => setAccountPrompt('leer conversaciones seguras')} type="button">Crear cuenta</button>
               </div>
             )}
-            {user && loadingJournalEntries && <p className="status-message">Cargando entradas...</p>}
+            {user && loadingJournalEntries && <div className="status-message"><LoadingIndicator label="Cargando entradas" /></div>}
             {user && journalEntriesError && <p className="status-message status-message-error">{journalEntriesError}</p>}
             {user && !loadingJournalEntries && !journalEntriesError && journalEntries.length === 0 && (
               <p className="empty-feed">Por ahora no hay nada que podamos mostrarte sin spoilearte. Volvé cuando avances un poco más.</p>
@@ -395,7 +396,7 @@ export default function GameDetailPage() {
 
                       {isRepliesOpen && (
                         <div className="reply-thread">
-                          {isLoadingReplies && <p className="reply-status">Cargando respuestas...</p>}
+                          {isLoadingReplies && <p className="reply-status"><LoadingIndicator label="Cargando respuestas" /></p>}
                           {repliesError && <p className="reply-status status-message-error">{repliesError}</p>}
                           {!isLoadingReplies && !repliesError && replies.length === 0 && (
                             <p className="reply-status">Todavía no hay respuestas. Podés abrir la conversación.</p>
@@ -426,7 +427,7 @@ export default function GameDetailPage() {
                               <div className="reply-form-footer">
                                 <p>Esta respuesta pertenece al mismo tramo que la entrada.</p>
                                 <button className="button-primary" disabled={savingReply || !replyContent.trim()} type="submit">
-                                  {savingReply ? 'Publicando...' : 'Responder'}
+                                  {savingReply ? <LoadingIndicator label="Publicando respuesta" /> : 'Responder'}
                                 </button>
                               </div>
                             </form>
@@ -452,7 +453,7 @@ export default function GameDetailPage() {
             <div className="dialog-actions">
               <button className="button-secondary" disabled={savingProgress} onClick={() => setPendingCheckpoint(null)} type="button">Cancelar</button>
               <button className="button-primary" disabled={savingProgress} onClick={confirmCheckpointChange} type="button">
-                {savingProgress ? 'Guardando...' : 'Guardar avance'}
+                {savingProgress ? <LoadingIndicator label="Guardando avance" /> : 'Guardar avance'}
               </button>
             </div>
           </section>

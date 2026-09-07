@@ -29,7 +29,9 @@ public class GameCatalogService {
             games.add(new GameResponse(
                     game.getId(),
                     game.getTitle(),
-                    game.getDescription()
+                    game.getDescription(),
+                    game.getCoverImageUrl(),
+                    game.getReleaseDate()
             ));
         }
 
