@@ -8,7 +8,7 @@ import { getGameArtwork, getGameInitials } from './gameArtwork';
 
 export default function HeroGameCarousel({ games }) {
   const slides = [
-    ...games.map((game) => ({ ...game, artwork: getGameArtwork(game.title), isPreview: false })),
+    ...games.map((game) => ({ ...game, artwork: game.coverImageUrl ?? getGameArtwork(game.title), isPreview: false })),
     ...catalogPreviewSlides.map((slide) => ({ ...slide, isPreview: true })),
   ];
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => (

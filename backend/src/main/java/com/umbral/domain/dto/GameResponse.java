@@ -1,5 +1,13 @@
 package com.umbral.domain.dto;
 
-public record GameResponse(Long id, String title, String description) {
+import java.time.LocalDate;
+
+public record GameResponse(
+        Long id,
+        String title,
+        String description,
+        String coverImageUrl,
+        LocalDate releaseDate
+) {
 
 }

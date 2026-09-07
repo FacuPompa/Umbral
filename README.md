@@ -21,6 +21,11 @@ palacios.
 - Roles iniciales `MEMBER` y `MODERATOR`. La primera cuenta cuyo email coincida
   con una variable local se convierte en moderadora; el rol nunca viene desde
   el formulario.
+- Búsqueda de juegos desde RAWG para sugerir una edición concreta. La clave de
+  esa API queda únicamente del lado de Spring, nunca llega al navegador.
+- Panel mínimo de moderación: una sugerencia pendiente se aprueba con una
+  descripción segura y recién entonces entra al catálogo local. Los checkpoints
+  de cada juego se siguen cargando manualmente.
 - Catálogo, checkpoints y entradas de bitácora guardados en PostgreSQL.
 - Usuarios demo históricos para poblar las conversaciones de ejemplo. No son
   cuentas de acceso.
@@ -68,6 +73,11 @@ palacios.
 | `POST` | `/api/me/journal-entries` | Publica una entrada en un checkpoint ya alcanzado. |
 | `GET` | `/api/journal-entries/{entryId}/replies` | Lista las respuestas de una entrada visible. |
 | `POST` | `/api/me/journal-entries/{entryId}/replies` | Publica una respuesta en una entrada visible. |
+| `GET` | `/api/game-suggestions/search?query=...` | Busca ediciones en RAWG para una cuenta autenticada. |
+| `POST` | `/api/game-suggestions` | Envía una edición a revisión. |
+| `GET` | `/api/moderation/game-suggestions` | Lista sugerencias pendientes para una cuenta moderadora. |
+| `POST` | `/api/moderation/game-suggestions/{id}/approve` | Aprueba y agrega el juego al catálogo local. |
+| `POST` | `/api/moderation/game-suggestions/{id}/reject` | Rechaza una sugerencia pendiente. |
 
 ## Levantarlo localmente
 
@@ -100,9 +110,21 @@ export UMBRAL_BOOTSTRAP_MODERATOR_EMAIL="tu-email@ejemplo.com"
 
 La primera cuenta registrada con ese email obtiene el rol `MODERATOR`; las
 demás nacen como `MEMBER`. Esta variable no se versiona y evita publicar un
-email personal en el repositorio. Para la demo actual, el rol todavía no abre
-un panel administrativo: prepara la regla para aprobar juegos y checkpoints en
-el siguiente corte.
+email personal en el repositorio. Una cuenta moderadora puede revisar las
+sugerencias pendientes desde la navegación de la aplicación.
+
+### Variables locales
+
+El backend admite un archivo `.env` local —ignorado por Git— tanto en la raíz
+del repositorio como dentro de `backend/`. Partí de `.env.example` y nunca
+subas valores reales. La búsqueda de sugerencias usa:
+
+```properties
+RAWG_API_KEY=tu-clave-local
+```
+
+En producción, la misma clave debe configurarse como variable de entorno y no
+como archivo.
 
 Para verificar el frontend antes de abrir una Pull Request:
 
@@ -114,6 +136,6 @@ npm run check
 ## Lo próximo
 
 - Diseñar perfiles y un espacio personal separado de la landing pública.
-- Diseñar el flujo de sugerencias de juegos y su aprobación por moderación.
+- Cargar checkpoints curados para los juegos que apruebe moderación.
 - Evaluar respuestas anidadas, menciones y moderación para los hilos.
 - Incorporar búsqueda de juegos y usuarios, respetando la barrera anti-spoilers.

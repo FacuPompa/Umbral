@@ -44,6 +44,8 @@ export default function AppShell() {
         <nav className="site-nav" aria-label="Navegación principal">
           <a href="/#catalogo">Catálogo</a>
           <a href="/#como-funciona">Cómo funciona</a>
+          {!loading && user && <Link className="site-nav-suggestion" to="/suggestions/new">Sugerir juego</Link>}
+          {!loading && user?.role === 'MODERATOR' && <Link className="site-nav-moderation" to="/moderation/games">Moderación</Link>}
           <button
             className="theme-toggle"
             type="button"

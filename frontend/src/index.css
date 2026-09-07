@@ -141,6 +141,7 @@ p { color: var(--text-secondary); line-height: 1.6; }
 .site-footer { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 28px 0 8px; }
 .site-footer strong { font-size: 0.86rem; }
 .site-footer p { color: var(--text-muted); font-size: 0.76rem; }
+.site-footer a { color: inherit; text-underline-offset: 3px; }
 
 /* Detalle del juego */
 .page-main { padding: 32px 0 72px; }
@@ -199,6 +200,14 @@ p { color: var(--text-secondary); line-height: 1.6; }
 .account-callout .button-primary, .account-callout .button-secondary { width: fit-content; }
 .page-state { display: grid; min-height: 65vh; place-items: center; color: var(--text-secondary); text-align: center; }
 
+.loading-indicator { display: inline-flex; width: 24px; height: 24px; align-items: center; justify-content: center; }
+.loading-indicator-mark { width: 20px; height: 20px; border: 2px solid var(--border-strong); border-top-color: var(--accent); border-radius: 50%; animation: loading-spin 760ms linear infinite; }
+.button-primary .loading-indicator, .button-secondary .loading-indicator { width: 18px; height: 18px; }
+.button-primary .loading-indicator-mark, .button-secondary .loading-indicator-mark { width: 16px; height: 16px; }
+.button-primary .loading-indicator-mark { border-color: rgb(17 19 23 / 0.4); border-top-color: var(--accent-foreground); }
+.inline-loader { display: grid; min-height: 128px; place-items: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+@keyframes loading-spin { to { transform: rotate(360deg); } }
+
 .dialog-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 24px; background: rgb(0 0 0 / 0.64); }
 .dialog-panel { width: min(100%, 480px); display: grid; gap: 18px; padding: 24px; border: 1px solid var(--border-strong); border-radius: 8px; color: var(--text); background: var(--surface); box-shadow: 0 2px 8px rgb(0 0 0 / 0.2); }
 .dialog-panel h2 { font-size: clamp(1.6rem, 4vw, 2.2rem); }
@@ -226,6 +235,33 @@ p { color: var(--text-secondary); line-height: 1.6; }
 .auth-switch a { color: var(--text); font-weight: 750; text-underline-offset: 4px; }
 .auth-switch a:hover { color: var(--accent); }
 
+/* Sugerencias y moderación */
+.suggestion-page, .moderation-page { width: min(100%, 900px); display: grid; gap: 36px; }
+.page-heading { display: grid; gap: 14px; padding-bottom: 28px; border-bottom: 1px solid var(--border-strong); }
+.page-heading h1 { font-size: clamp(2.4rem, 5vw, 3.8rem); }
+.page-heading p { max-width: 660px; }
+.game-search-form { display: grid; gap: 9px; }
+.game-search-form > label, .moderation-copy label { color: var(--text-secondary); font-size: 0.84rem; font-weight: 750; }
+.game-search-form > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; }
+.game-search-form input, .moderation-copy textarea { width: 100%; border: 1px solid var(--border-strong); border-radius: 5px; color: var(--text); background: var(--surface); }
+.game-search-form input { min-height: 44px; padding: 0 12px; }
+.suggestion-results, .moderation-list { border-top: 1px solid var(--border-strong); }
+.suggestion-results-wrap { display: grid; gap: 12px; }
+.external-attribution { color: var(--text-muted); font-size: 0.76rem; }
+.external-attribution a { color: inherit; text-underline-offset: 3px; }
+.suggestion-result, .moderation-item { display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; gap: 20px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); }
+.suggestion-result-artwork { width: 88px; height: 112px; overflow: hidden; border: 1px solid var(--border); border-radius: 5px; color: var(--paper); background: var(--ink); }
+.suggestion-result-artwork img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.suggestion-result-artwork span { display: grid; width: 100%; height: 100%; place-items: center; font-weight: 900; }
+.suggestion-result-copy, .moderation-copy { display: grid; gap: 8px; }
+.suggestion-result-copy h2, .moderation-copy h2 { font-size: 1.15rem; }
+.suggestion-result-copy p, .moderation-copy > p { color: var(--text-muted); font-size: 0.84rem; }
+.moderation-item { grid-template-columns: 88px minmax(0, 1fr); align-items: start; }
+.moderation-copy { gap: 14px; }
+.moderation-copy label { display: grid; gap: 8px; }
+.moderation-copy textarea { min-height: 100px; padding: 12px; line-height: 1.5; resize: vertical; }
+.moderation-actions { display: flex; gap: 12px; }
+
 @media (max-width: 1080px) {
   .landing-hero { grid-template-columns: minmax(0, 1fr) minmax(380px, 0.9fr); }
   .game-hero { grid-template-columns: 230px minmax(0, 1fr); }
@@ -249,8 +285,8 @@ p { color: var(--text-secondary); line-height: 1.6; }
 
 @media (max-width: 620px) {
   .app-shell { width: min(100% - 28px, 1240px); }
-  .site-header { min-height: 64px; align-items: center; flex-direction: row; gap: 12px; padding: 10px 0; }
-  .site-nav { width: auto; margin-left: auto; flex-wrap: nowrap; gap: 14px; }
+  .site-header { min-height: 64px; align-items: flex-start; flex-direction: column; gap: 8px; padding: 12px 0; }
+  .site-nav { width: 100%; margin-left: 0; flex-wrap: wrap; gap: 10px 14px; }
   .site-nav > a:nth-of-type(2), .future-access { display: none; }
   .account-handle { display: none; }
   .theme-toggle { gap: 6px; font-size: 0.8rem; }
@@ -309,8 +345,14 @@ p { color: var(--text-secondary); line-height: 1.6; }
   .auth-page { min-height: calc(100vh - 64px); padding: 48px 0; }
   .auth-form-section { gap: 28px; }
   .auth-form .button-primary { width: 100%; }
+  .suggestion-page, .moderation-page { gap: 28px; }
+  .game-search-form > div { grid-template-columns: 1fr; }
+  .suggestion-result, .moderation-item { grid-template-columns: 72px minmax(0, 1fr); gap: 14px; }
+  .suggestion-result-artwork { width: 72px; height: 96px; }
+  .suggestion-result .button-secondary { grid-column: 2; width: fit-content; }
+  .moderation-actions { align-items: stretch; flex-direction: column; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }

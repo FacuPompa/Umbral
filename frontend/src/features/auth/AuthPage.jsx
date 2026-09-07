@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import LoadingIndicator from '../../components/LoadingIndicator';
 import { useAuth } from './useAuth';
 
 export default function AuthPage({ mode }) {
@@ -15,7 +16,7 @@ export default function AuthPage({ mode }) {
   const destination = location.state?.from?.pathname ?? '/';
 
   if (loading) {
-    return <main className="page-state" id="main-content">Recuperando tu sesión...</main>;
+    return <main className="page-state" id="main-content"><LoadingIndicator label="Recuperando sesión" /></main>;
   }
 
   if (user) {
@@ -95,7 +96,7 @@ export default function AuthPage({ mode }) {
               <input
                 autoComplete={isRegister ? 'new-password' : 'current-password'}
                 maxLength="72"
-                minLength="12"
+                minLength="8"
                 name="password"
                 onChange={updateField}
                 required
@@ -112,12 +113,12 @@ export default function AuthPage({ mode }) {
                 {showPassword ? 'Ocultar' : 'Mostrar'}
               </button>
             </span>
-            {isRegister && <span>Usá al menos 12 caracteres.</span>}
+            {isRegister && <span>Usá al menos 8 caracteres.</span>}
           </label>
 
           {error && <p className="form-error" role="alert">{error}</p>}
           <button className="button-primary" disabled={submitting} type="submit">
-            {submitting ? 'Guardando...' : isRegister ? 'Crear cuenta' : 'Iniciar sesión'}
+            {submitting ? <LoadingIndicator label={isRegister ? 'Creando cuenta' : 'Iniciando sesión'} /> : isRegister ? 'Crear cuenta' : 'Iniciar sesión'}
           </button>
         </form>
 
