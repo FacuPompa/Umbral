@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
+import { useAuth } from '../features/auth/useAuth';
 
 function getInitialTheme() {
   const savedTheme = window.localStorage.getItem('umbral-theme');
@@ -13,6 +14,7 @@ function getInitialTheme() {
 
 export default function AppShell() {
   const [theme, setTheme] = useState(getInitialTheme);
+  const { user, loading, logout } = useAuth();
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -21,6 +23,14 @@ export default function AppShell() {
 
   function toggleTheme() {
     setTheme((currentTheme) => (currentTheme === 'dark' ? 'light' : 'dark'));
+  }
+
+  async function handleLogout() {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('No se pudo cerrar la sesión.', error);
+    }
   }
 
   const isDarkTheme = theme === 'dark';
@@ -45,8 +55,18 @@ export default function AppShell() {
             </span>
             <span>{isDarkTheme ? 'Claro' : 'Oscuro'}</span>
           </button>
-          <button className="future-access future-access-login" disabled title="Próximamente" type="button">Iniciar sesión</button>
-          <button className="future-access future-access-register" disabled title="Próximamente" type="button">Crear cuenta</button>
+          {!loading && !user && (
+            <div className="account-actions">
+              <Link className="future-access future-access-login" to="/login">Iniciar sesión</Link>
+              <Link className="future-access future-access-register" to="/register">Crear cuenta</Link>
+            </div>
+          )}
+          {!loading && user && (
+            <div className="account-actions">
+              <span className="account-handle">{user.handle}</span>
+              <button className="future-access future-access-login" onClick={handleLogout} type="button">Cerrar sesión</button>
+            </div>
+          )}
         </nav>
       </header>
 

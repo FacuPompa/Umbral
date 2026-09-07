@@ -1,100 +1,33 @@
-const GAMES_URL = '/api/games';
+import { getJson, sendJson } from '../../lib/apiClient';
 
-
-export async function fetchGames() {
-  const response = await fetch(GAMES_URL);
-
-  if (!response.ok) {
-    throw new Error('No se pudo cargar el catálogo.');
-  }
-
-  return response.json();
+export function fetchGames() {
+  return getJson('/api/games', 'No se pudo cargar el catálogo.');
 }
 
-export async function fetchCheckpoints(gameId) {
-  const response = await fetch(`/api/games/${gameId}/checkpoints`);
-
-  if (!response.ok) {
-    throw new Error('No se pudieron cargar los checkpoints.');
-  }
-
-  return response.json();
+export function fetchCheckpoints(gameId) {
+  return getJson(`/api/games/${gameId}/checkpoints`, 'No se pudieron cargar los checkpoints.');
 }
 
-  export async function fetchGameProgress() {
-  const response = await fetch('/api/me/game-progress');
-
-  if (!response.ok) {
-    throw new Error('No se pudo cargar el progreso.');
-  }
-
-  return response.json();
+export function fetchGameProgress() {
+  return getJson('/api/me/game-progress', 'No se pudo cargar el progreso.');
 }
 
-export async function updateGameProgress(gameId, checkpointId) {
-  const response = await fetch(`/api/me/games/${gameId}/progress`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ checkpointId }),
-  });
-
-  if (!response.ok) {
-    throw new Error('No se pudo guardar el progreso.');
-  }
-
-  return response.json();
+export function updateGameProgress(gameId, checkpointId) {
+  return sendJson(`/api/me/games/${gameId}/progress`, 'PUT', { checkpointId }, 'No se pudo guardar el progreso.');
 }
 
-export async function fetchJournalEntries(gameId) {
-  const response = await fetch(`/api/games/${gameId}/journal-entries`);
-
-  if (!response.ok) {
-    throw new Error('No se pudo cargar la bitácora.');
-  }
-
-  return response.json();
+export function fetchJournalEntries(gameId) {
+  return getJson(`/api/games/${gameId}/journal-entries`, 'No se pudo cargar la bitácora.');
 }
 
-export async function createJournalEntry(checkpointId, type, content) {
-  const response = await fetch('/api/me/journal-entries', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ checkpointId, type, content }),
-  });
-
-  if (!response.ok) {
-    throw new Error('No se pudo publicar la entrada.');
-  }
-
-  return response.json();
+export function createJournalEntry(checkpointId, type, content) {
+  return sendJson('/api/me/journal-entries', 'POST', { checkpointId, type, content }, 'No se pudo publicar la entrada.');
 }
 
-export async function fetchJournalReplies(entryId) {
-  const response = await fetch(`/api/journal-entries/${entryId}/replies`);
-
-  if (!response.ok) {
-    throw new Error('No se pudieron cargar las respuestas.');
-  }
-
-  return response.json();
+export function fetchJournalReplies(entryId) {
+  return getJson(`/api/journal-entries/${entryId}/replies`, 'No se pudieron cargar las respuestas.');
 }
 
-export async function createJournalReply(entryId, content) {
-  const response = await fetch(`/api/me/journal-entries/${entryId}/replies`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ content }),
-  });
-
-  if (!response.ok) {
-    throw new Error('No se pudo publicar la respuesta.');
-  }
-
-  return response.json();
+export function createJournalReply(entryId, content) {
+  return sendJson(`/api/me/journal-entries/${entryId}/replies`, 'POST', { content }, 'No se pudo publicar la respuesta.');
 }

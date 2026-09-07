@@ -1,0 +1,12 @@
+package com.umbral.domain.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(HttpStatus.UNAUTHORIZED)
+public class InvalidCredentialsException extends RuntimeException {
+
+    public InvalidCredentialsException() {
+        super("El usuario o la contraseña no son correctos.");
+    }
+}

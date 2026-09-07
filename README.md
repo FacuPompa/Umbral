@@ -14,8 +14,16 @@ palacios.
 
 - Landing pública que explica la idea de Umbral y carga el catálogo real.
 - Tema claro/oscuro que recuerda la elección en el navegador.
+- Registro e inicio de sesión con sesiones HTTP seguras, contraseñas hasheadas
+  con BCrypt y protección CSRF.
+- El detalle de cada juego y todas las acciones personales requieren una sesión;
+  el catálogo y los checkpoints siguen siendo públicos.
+- Roles iniciales `MEMBER` y `MODERATOR`. La primera cuenta cuyo email coincida
+  con una variable local se convierte en moderadora; el rol nunca viene desde
+  el formulario.
 - Catálogo, checkpoints y entradas de bitácora guardados en PostgreSQL.
-- Un usuario demo con progreso por juego y entradas de ejemplo.
+- Usuarios demo históricos para poblar las conversaciones de ejemplo. No son
+  cuentas de acceso.
 - El progreso se crea o actualiza al elegir un checkpoint y se restaura al
   recargar React.
 - Se pueden publicar entradas de texto solamente hasta el checkpoint alcanzado.
@@ -33,14 +41,11 @@ palacios.
   (Testcontainers).
 - GitHub Actions corre los tests del backend en cada push y pull request.
 
-Todavía no hay login: las rutas `/api/me/...` usan un usuario demo mientras se
-diseña la parte de identidad.
-
 ## Stack
 
 | Parte | Tecnologías |
 | --- | --- |
-| Backend | Java 26, Spring Boot, Gradle, Spring Data JPA, Flyway |
+| Backend | Java 26, Spring Boot, Spring Security, Gradle, Spring Data JPA, Flyway |
 | Base de datos | PostgreSQL 17 + Docker Compose |
 | Frontend | React, React Router, Vite, JavaScript |
 | Tests | JUnit, MockMvc, Testcontainers |
@@ -52,7 +57,12 @@ diseña la parte de identidad.
 | --- | --- | --- |
 | `GET` | `/api/games` | Lista el catálogo. |
 | `GET` | `/api/games/{gameId}/checkpoints` | Lista los checkpoints del juego. |
-| `GET` | `/api/me/game-progress` | Consulta el progreso del usuario demo. |
+| `GET` | `/api/auth/csrf` | Entrega el token necesario para las operaciones que escriben datos. |
+| `POST` | `/api/auth/register` | Crea una cuenta. |
+| `POST` | `/api/auth/login` | Inicia una sesión HTTP. |
+| `GET` | `/api/auth/me` | Devuelve la cuenta de la sesión actual. |
+| `POST` | `/api/auth/logout` | Cierra la sesión actual. |
+| `GET` | `/api/me/game-progress` | Consulta el progreso de la persona autenticada. |
 | `PUT` | `/api/me/games/{gameId}/progress` | Guarda el checkpoint alcanzado. |
 | `GET` | `/api/games/{gameId}/journal-entries` | Lista solo las entradas seguras para el progreso actual. |
 | `POST` | `/api/me/journal-entries` | Publica una entrada en un checkpoint ya alcanzado. |
@@ -77,7 +87,22 @@ npm run dev
 
 El frontend queda en `http://localhost:5173` y el backend usa el puerto `8080`.
 La ruta `/` muestra la presentación y el catálogo; `/games/1` abre el detalle
-del juego de prueba.
+del juego de prueba después de iniciar sesión.
+
+### Primera cuenta moderadora local
+
+Antes de registrar la primera cuenta, elegí el email que será moderador y
+exportalo en la terminal con la que iniciás el backend:
+
+```bash
+export UMBRAL_BOOTSTRAP_MODERATOR_EMAIL="tu-email@ejemplo.com"
+```
+
+La primera cuenta registrada con ese email obtiene el rol `MODERATOR`; las
+demás nacen como `MEMBER`. Esta variable no se versiona y evita publicar un
+email personal en el repositorio. Para la demo actual, el rol todavía no abre
+un panel administrativo: prepara la regla para aprobar juegos y checkpoints en
+el siguiente corte.
 
 Para verificar el frontend antes de abrir una Pull Request:
 
@@ -88,7 +113,7 @@ npm run check
 
 ## Lo próximo
 
-- Reemplazar el usuario demo por identidad real.
 - Diseñar perfiles y un espacio personal separado de la landing pública.
+- Diseñar el flujo de sugerencias de juegos y su aprobación por moderación.
 - Evaluar respuestas anidadas, menciones y moderación para los hilos.
 - Incorporar búsqueda de juegos y usuarios, respetando la barrera anti-spoilers.
