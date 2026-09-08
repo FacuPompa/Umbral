@@ -171,6 +171,14 @@ p { color: var(--text-secondary); line-height: 1.6; }
 .checkpoint-button-current { border-left-color: var(--accent); color: var(--text); background: var(--surface-muted); }
 .checkpoint-position, .checkpoint-state, .journal-entry-meta { color: var(--text-muted); font-size: 0.68rem; letter-spacing: 0.05em; text-transform: uppercase; }
 .checkpoint-button-current .checkpoint-position, .checkpoint-state { color: var(--accent); }
+.checkpoint-suggestion-form { display: grid; gap: 12px; padding-top: 20px; border-top: 1px solid var(--border); }
+.checkpoint-suggestion-form h3 { font-size: 1rem; }
+.checkpoint-suggestion-form > p { font-size: 0.84rem; }
+.checkpoint-suggestion-form label { display: grid; gap: 8px; color: var(--text-secondary); font-size: 0.82rem; font-weight: 700; }
+.checkpoint-suggestion-form input { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 5px; color: var(--text); background: var(--surface); }
+.checkpoint-suggestion-form .button-secondary { width: fit-content; }
+.checkpoint-suggestion-notice, .checkpoint-suggestion-error { padding: 10px 0 0; border-top: 1px solid var(--border); font-size: 0.82rem; }
+.checkpoint-suggestion-error { border-color: var(--error); color: var(--error); }
 .conversation-column { display: grid; min-width: 0; gap: 72px; }
 .compose-panel, .feed-panel { display: grid; gap: 24px; padding-top: 24px; border-top: 1px solid var(--border-strong); }
 .entry-form { display: grid; gap: 20px; }
@@ -261,6 +269,8 @@ p { color: var(--text-secondary); line-height: 1.6; }
 .moderation-copy label { display: grid; gap: 8px; }
 .moderation-copy textarea { min-height: 100px; padding: 12px; line-height: 1.5; resize: vertical; }
 .moderation-actions { display: flex; gap: 12px; }
+.moderation-section-title { margin: 0; padding: 20px 0 12px; border-top: 1px solid var(--border-strong); font-size: 1.3rem; }
+.checkpoint-suggestion-marker { display: grid; place-items: center; color: var(--accent); font-size: 1rem; font-weight: 800; }
 
 @media (max-width: 1080px) {
   .landing-hero { grid-template-columns: minmax(0, 1fr) minmax(380px, 0.9fr); }
@@ -332,6 +342,7 @@ p { color: var(--text-secondary); line-height: 1.6; }
   .progress-panel { gap: 20px; padding: 0; border: 0; background: transparent; }
   .checkpoint-button { grid-template-columns: 25px minmax(0, 1fr); }
   .checkpoint-state { grid-column: 2; }
+  .checkpoint-suggestion-form .button-secondary { width: 100%; }
   .conversation-column { gap: 52px; }
   .compose-panel, .feed-panel { gap: 20px; padding-top: 20px; }
   .entry-form { gap: 16px; }

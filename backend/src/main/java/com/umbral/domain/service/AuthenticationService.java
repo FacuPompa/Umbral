@@ -7,7 +7,6 @@ import com.umbral.domain.entity.UserRole;
 import com.umbral.domain.exception.EmailAlreadyInUseException;
 import com.umbral.domain.exception.HandleAlreadyInUseException;
 import com.umbral.domain.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,16 +18,13 @@ public class AuthenticationService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final String bootstrapModeratorEmail;
 
     public AuthenticationService(
             UserRepository userRepository,
-            PasswordEncoder passwordEncoder,
-            @Value("${umbral.auth.bootstrap-moderator-email:}") String bootstrapModeratorEmail
+            PasswordEncoder passwordEncoder
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.bootstrapModeratorEmail = bootstrapModeratorEmail.trim().toLowerCase(Locale.ROOT);
     }
 
     @Transactional
@@ -44,10 +40,12 @@ public class AuthenticationService {
             throw new EmailAlreadyInUseException();
         }
 
-        UserRole role = shouldBootstrapModerator(email)
-                ? UserRole.MODERATOR
-                : UserRole.MEMBER;
-        User user = new User(handle, email, passwordEncoder.encode(request.password()), role);
+        User user = new User(
+                handle,
+                email,
+                passwordEncoder.encode(request.password()),
+                UserRole.MEMBER
+        );
 
         return toResponse(userRepository.save(user));
     }
@@ -58,12 +56,6 @@ public class AuthenticationService {
                 .orElseThrow(() -> new IllegalStateException("El usuario autenticado no existe."));
 
         return toResponse(user);
-    }
-
-    private boolean shouldBootstrapModerator(String email) {
-        return !bootstrapModeratorEmail.isBlank()
-                && bootstrapModeratorEmail.equals(email)
-                && !userRepository.existsByRole(UserRole.MODERATOR);
     }
 
     private AuthenticatedUserResponse toResponse(User user) {

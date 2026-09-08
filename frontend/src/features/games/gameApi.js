@@ -8,6 +8,15 @@ export function fetchCheckpoints(gameId) {
   return getJson(`/api/games/${gameId}/checkpoints`, 'No se pudieron cargar los checkpoints.');
 }
 
+export function submitCheckpointSuggestion(gameId, label, position) {
+  return sendJson(
+    `/api/games/${gameId}/checkpoint-suggestions`,
+    'POST',
+    { label, position },
+    'No se pudo enviar la propuesta de checkpoint.',
+  );
+}
+
 export function fetchGameProgress() {
   return getJson('/api/me/game-progress', 'No se pudo cargar el progreso.');
 }
@@ -59,5 +68,27 @@ export function rejectGameSuggestion(suggestionId) {
     'POST',
     {},
     'No se pudo rechazar la sugerencia.',
+  );
+}
+
+export function fetchPendingCheckpointSuggestions() {
+  return getJson('/api/moderation/checkpoint-suggestions', 'No se pudieron cargar los checkpoints pendientes.');
+}
+
+export function approveCheckpointSuggestion(suggestionId) {
+  return sendJson(
+    `/api/moderation/checkpoint-suggestions/${suggestionId}/approve`,
+    'POST',
+    {},
+    'No se pudo aprobar el checkpoint.',
+  );
+}
+
+export function rejectCheckpointSuggestion(suggestionId) {
+  return sendJson(
+    `/api/moderation/checkpoint-suggestions/${suggestionId}/reject`,
+    'POST',
+    {},
+    'No se pudo rechazar el checkpoint.',
   );
 }
