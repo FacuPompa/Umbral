@@ -6,6 +6,8 @@ Proyecto para hablar de juegos narrativos sin comerse spoilers.
 completo y validado localmente; todavía no es una versión de producción ni una
 aplicación social terminada.
 
+**Demo en vivo:** [umbral-facupompa.netlify.app](https://umbral-facupompa.netlify.app)
+
 Cada juego se divide en checkpoints de historia. Antes de leer o publicar una
 entrada, cada persona indica hasta dónde llegó. El backend usa ese avance para
 devolver solamente conversaciones que ya son seguras para esa persona.
