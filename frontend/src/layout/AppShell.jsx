@@ -39,7 +39,9 @@ export default function AppShell() {
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Saltar al contenido</a>
       <header className="site-header">
-        <Link className="site-brand" to="/">UMBRAL/</Link>
+        <Link aria-label="Umbral" className="site-brand" to="/">
+          <img alt="" src="/favicon.svg" />
+        </Link>
 
         <nav className="site-nav" aria-label="Navegación principal">
           <a href="/#catalogo">Catálogo</a>
