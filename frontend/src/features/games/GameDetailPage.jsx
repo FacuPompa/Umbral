@@ -9,6 +9,7 @@ import {
   fetchGames,
   fetchJournalEntries,
   fetchJournalReplies,
+  submitCheckpointSuggestion,
   updateGameProgress,
 } from './gameApi';
 import { getGameArtwork, getGameInitials } from './gameArtwork';
@@ -42,6 +43,11 @@ export default function GameDetailPage() {
   const [checkpointsError, setCheckpointsError] = useState(null);
   const [savingProgress, setSavingProgress] = useState(false);
   const [savingProgressError, setSavingProgressError] = useState(null);
+  const [checkpointSuggestionLabel, setCheckpointSuggestionLabel] = useState('');
+  const [checkpointSuggestionPosition, setCheckpointSuggestionPosition] = useState('');
+  const [savingCheckpointSuggestion, setSavingCheckpointSuggestion] = useState(false);
+  const [checkpointSuggestionError, setCheckpointSuggestionError] = useState(null);
+  const [checkpointSuggestionNotice, setCheckpointSuggestionNotice] = useState(null);
   const [journalEntries, setJournalEntries] = useState([]);
   const [loadingJournalEntries, setLoadingJournalEntries] = useState(false);
   const [journalEntriesError, setJournalEntriesError] = useState(null);
@@ -115,7 +121,11 @@ export default function GameDetailPage() {
     setLoadingCheckpoints(true);
     setCheckpointsError(null);
     try {
-      setCheckpoints(await fetchCheckpoints(id));
+      const checkpointsFromApi = await fetchCheckpoints(id);
+      setCheckpoints(checkpointsFromApi);
+      setCheckpointSuggestionPosition(String(
+        Math.max(0, ...checkpointsFromApi.map((checkpoint) => checkpoint.position)) + 1,
+      ));
     } catch (requestError) {
       setCheckpointsError(requestError.message);
     } finally {
@@ -166,6 +176,27 @@ export default function GameDetailPage() {
       setSavingProgressError(requestError.message);
     } finally {
       setSavingProgress(false);
+    }
+  }
+
+  async function createCheckpointSuggestion(event) {
+    event.preventDefault();
+    setSavingCheckpointSuggestion(true);
+    setCheckpointSuggestionError(null);
+    setCheckpointSuggestionNotice(null);
+
+    try {
+      const suggestion = await submitCheckpointSuggestion(
+        game.id,
+        checkpointSuggestionLabel.trim(),
+        Number(checkpointSuggestionPosition),
+      );
+      setCheckpointSuggestionLabel('');
+      setCheckpointSuggestionNotice(`“${suggestion.label}” quedó enviado para revisión.`);
+    } catch (requestError) {
+      setCheckpointSuggestionError(requestError.message);
+    } finally {
+      setSavingCheckpointSuggestion(false);
     }
   }
 
@@ -304,6 +335,41 @@ export default function GameDetailPage() {
                 );
               })}
             </ol>
+          )}
+          {user && !loadingCheckpoints && !checkpointsError && (
+            <form className="checkpoint-suggestion-form" onSubmit={createCheckpointSuggestion}>
+              <h3>¿Falta un checkpoint?</h3>
+              <p>Proponelo para que una persona moderadora pueda revisarlo antes de habilitarlo.</p>
+              <label>
+                Nombre del tramo
+                <input
+                  maxLength="255"
+                  onChange={(event) => setCheckpointSuggestionLabel(event.target.value)}
+                  placeholder="Por ejemplo: Primer palacio"
+                  required
+                  value={checkpointSuggestionLabel}
+                />
+              </label>
+              <label>
+                Posición en la historia
+                <input
+                  min="1"
+                  onChange={(event) => setCheckpointSuggestionPosition(event.target.value)}
+                  required
+                  type="number"
+                  value={checkpointSuggestionPosition}
+                />
+              </label>
+              <button
+                className="button-secondary"
+                disabled={savingCheckpointSuggestion || !checkpointSuggestionLabel.trim() || !checkpointSuggestionPosition}
+                type="submit"
+              >
+                {savingCheckpointSuggestion ? <LoadingIndicator label="Enviando checkpoint" /> : 'Enviar propuesta'}
+              </button>
+              {checkpointSuggestionNotice && <p className="checkpoint-suggestion-notice" role="status">{checkpointSuggestionNotice}</p>}
+              {checkpointSuggestionError && <p className="checkpoint-suggestion-error" role="alert">{checkpointSuggestionError}</p>}
+            </form>
           )}
           {savingProgressError && <p className="status-message status-message-error">{savingProgressError}</p>}
         </section>

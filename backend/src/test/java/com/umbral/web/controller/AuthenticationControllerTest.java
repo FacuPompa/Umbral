@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(properties = "umbral.auth.bootstrap-moderator-email=facu@example.com")
+@SpringBootTest
 @AutoConfigureMockMvc
 @Import(PostgresTestConfiguration.class)
 @Transactional
@@ -36,7 +36,7 @@ class AuthenticationControllerTest {
     }
 
     @Test
-    void registersTheConfiguredFirstModerator() throws Exception {
+    void registersNewUsersAsMembers() throws Exception {
         mockMvc.perform(post("/api/auth/register")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -50,7 +50,7 @@ class AuthenticationControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.handle").value("facu"))
                 .andExpect(jsonPath("$.email").value("facu@example.com"))
-                .andExpect(jsonPath("$.role").value("MODERATOR"));
+                .andExpect(jsonPath("$.role").value("MEMBER"));
     }
 
     @Test

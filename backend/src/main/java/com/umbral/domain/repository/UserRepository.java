@@ -1,7 +1,6 @@
 package com.umbral.domain.repository;
 
 import com.umbral.domain.entity.User;
-import com.umbral.domain.entity.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -12,6 +11,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByHandle(String handle);
 
     boolean existsByEmail(String email);
-
-    boolean existsByRole(UserRole role);
 }

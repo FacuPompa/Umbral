@@ -2,11 +2,15 @@
 
 Proyecto para hablar de juegos narrativos sin comerse spoilers.
 
+**Estado actual: v1.0.0 (MVP de aprendizaje).** El flujo principal ya está
+completo y validado localmente; todavía no es una versión de producción ni una
+aplicación social terminada.
+
 Cada juego se divide en checkpoints de historia. Antes de leer o publicar una
 entrada, cada persona indica hasta dónde llegó. El backend usa ese avance para
 devolver solamente conversaciones que ya son seguras para esa persona.
 
-Por ahora el catálogo de prueba es **Persona 5 Royal**. En vez de usar un
+El catálogo parte de **Persona 5 Royal**. En vez de usar un
 porcentaje, el progreso se guarda por tramos de la historia, como los
 palacios.
 
@@ -18,14 +22,13 @@ palacios.
   con BCrypt y protección CSRF.
 - El detalle de cada juego y todas las acciones personales requieren una sesión;
   el catálogo y los checkpoints siguen siendo públicos.
-- Roles iniciales `MEMBER` y `MODERATOR`. La primera cuenta cuyo email coincida
-  con una variable local se convierte en moderadora; el rol nunca viene desde
-  el formulario.
+- Roles iniciales `MEMBER` y `MODERATOR`. Las cuentas nuevas nacen como
+  `MEMBER`; el rol nunca viene desde el formulario.
 - Búsqueda de juegos desde RAWG para sugerir una edición concreta. La clave de
   esa API queda únicamente del lado de Spring, nunca llega al navegador.
 - Panel mínimo de moderación: una sugerencia pendiente se aprueba con una
   descripción segura y recién entonces entra al catálogo local. Los checkpoints
-  de cada juego se siguen cargando manualmente.
+  se proponen para cada juego y solo se habilitan tras una revisión moderadora.
 - Catálogo, checkpoints y entradas de bitácora guardados en PostgreSQL.
 - Usuarios demo históricos para poblar las conversaciones de ejemplo. No son
   cuentas de acceso.
@@ -62,6 +65,7 @@ palacios.
 | --- | --- | --- |
 | `GET` | `/api/games` | Lista el catálogo. |
 | `GET` | `/api/games/{gameId}/checkpoints` | Lista los checkpoints del juego. |
+| `POST` | `/api/games/{gameId}/checkpoint-suggestions` | Propone un checkpoint para revisión. |
 | `GET` | `/api/auth/csrf` | Entrega el token necesario para las operaciones que escriben datos. |
 | `POST` | `/api/auth/register` | Crea una cuenta. |
 | `POST` | `/api/auth/login` | Inicia una sesión HTTP. |
@@ -78,6 +82,9 @@ palacios.
 | `GET` | `/api/moderation/game-suggestions` | Lista sugerencias pendientes para una cuenta moderadora. |
 | `POST` | `/api/moderation/game-suggestions/{id}/approve` | Aprueba y agrega el juego al catálogo local. |
 | `POST` | `/api/moderation/game-suggestions/{id}/reject` | Rechaza una sugerencia pendiente. |
+| `GET` | `/api/moderation/checkpoint-suggestions` | Lista checkpoints pendientes para moderación. |
+| `POST` | `/api/moderation/checkpoint-suggestions/{id}/approve` | Aprueba y habilita un checkpoint. |
+| `POST` | `/api/moderation/checkpoint-suggestions/{id}/reject` | Rechaza una propuesta de checkpoint. |
 
 ## Levantarlo localmente
 
@@ -98,20 +105,6 @@ npm run dev
 El frontend queda en `http://localhost:5173` y el backend usa el puerto `8080`.
 La ruta `/` muestra la presentación y el catálogo; `/games/1` abre el detalle
 del juego de prueba después de iniciar sesión.
-
-### Primera cuenta moderadora local
-
-Antes de registrar la primera cuenta, elegí el email que será moderador y
-exportalo en la terminal con la que iniciás el backend:
-
-```bash
-export UMBRAL_BOOTSTRAP_MODERATOR_EMAIL="tu-email@ejemplo.com"
-```
-
-La primera cuenta registrada con ese email obtiene el rol `MODERATOR`; las
-demás nacen como `MEMBER`. Esta variable no se versiona y evita publicar un
-email personal en el repositorio. Una cuenta moderadora puede revisar las
-sugerencias pendientes desde la navegación de la aplicación.
 
 ### Variables locales
 
@@ -135,7 +128,12 @@ npm run check
 
 ## Lo próximo
 
-- Diseñar perfiles y un espacio personal separado de la landing pública.
-- Cargar checkpoints curados para los juegos que apruebe moderación.
+- Diseñar perfiles públicos y personales, con reseñas escritas, juegos
+  favoritos y métricas que tengan significado real.
+- Rediseñar la navegación: una barra flotante contenida, más aire entre
+  acciones y un menú de perfil con opciones de cuenta.
+- Crear una identidad propia para Umbral: logo y favicon.
+- Reemplazar las imágenes de muestra del carrusel por contenido real del
+  catálogo, o quitar el carrusel si deja de aportar.
 - Evaluar respuestas anidadas, menciones y moderación para los hilos.
 - Incorporar búsqueda de juegos y usuarios, respetando la barrera anti-spoilers.
