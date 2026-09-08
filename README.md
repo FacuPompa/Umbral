@@ -119,6 +119,15 @@ RAWG_API_KEY=tu-clave-local
 En producción, la misma clave debe configurarse como variable de entorno y no
 como archivo.
 
+### Despliegue
+
+La aplicación está preparada para desplegar el frontend en Netlify, el backend
+en Render mediante `backend/Dockerfile` y PostgreSQL en Supabase. El backend
+recibe la conexión por `SPRING_DATASOURCE_URL`,
+`SPRING_DATASOURCE_USERNAME` y `SPRING_DATASOURCE_PASSWORD`; el frontend usa
+`VITE_API_BASE_URL`. Los valores reales se cargan en los paneles de cada
+plataforma, nunca en el repositorio.
+
 Para verificar el frontend antes de abrir una Pull Request:
 
 ```bash

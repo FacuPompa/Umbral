@@ -7,6 +7,11 @@ export class ApiError extends Error {
 }
 
 let csrfToken;
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
+
+function apiUrl(path) {
+  return `${apiBaseUrl}${path}`;
+}
 
 function defaultMessageForStatus(status) {
   if (status === 400) return 'Revisá los datos que ingresaste.';
@@ -34,7 +39,7 @@ async function errorFrom(response, fallbackMessage) {
 export async function ensureCsrfToken() {
   if (csrfToken) return csrfToken;
 
-  const response = await fetch('/api/auth/csrf', {
+  const response = await fetch(apiUrl('/api/auth/csrf'), {
     credentials: 'include',
   });
 
@@ -55,7 +60,7 @@ export async function apiRequest(path, options = {}) {
     headers.set(csrf.headerName, csrf.token);
   }
 
-  return fetch(path, {
+  return fetch(apiUrl(path), {
     ...options,
     method,
     headers,
