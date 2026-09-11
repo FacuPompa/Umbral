@@ -2,8 +2,8 @@
 
 Proyecto para hablar de juegos narrativos sin comerse spoilers.
 
-**Estado actual: MVP de aprendizaje.** La última release publicada es
-[`v1.0.0`](https://github.com/FacuPompa/Umbral/releases/tag/v1.0.0). El flujo
+**Estado actual:** La última release publicada es
+[`v1.1.0`](https://github.com/FacuPompa/Umbral/releases/tag/v1.1.0). El flujo
 principal está validado localmente; todavía no es una versión de producción ni
 una aplicación social terminada.
 
