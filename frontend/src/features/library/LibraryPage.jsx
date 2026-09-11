@@ -11,6 +11,14 @@ import {
 import { getGameArtwork, getGameInitials } from '../games/gameArtwork';
 import { libraryStatusOptions } from './libraryLabels';
 
+function FavoriteIcon({ favorite }) {
+  return (
+    <svg aria-hidden="true" fill={favorite ? 'currentColor' : 'none'} height="17" viewBox="0 0 24 24" width="17">
+      <path d="m12 3.8 2.5 5.1 5.6.8-4 3.9.9 5.5-5-2.7-5 2.7.9-5.5-4-3.9 5.6-.8L12 3.8Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.7" />
+    </svg>
+  );
+}
+
 const filters = [
   { value: 'ALL', label: 'Todos' },
   ...libraryStatusOptions,
@@ -174,8 +182,9 @@ export default function LibraryPage() {
                       </select>
                     </label>
                     <div className="library-actions">
-                      <button className="library-action" disabled={isWorking} onClick={() => changeFavorite(game)} type="button">
-                        {game.favorite ? 'Quitar favorito' : 'Marcar favorito'}
+                      <button className="library-action library-favorite-action" disabled={isWorking} onClick={() => changeFavorite(game)} type="button">
+                        <FavoriteIcon favorite={game.favorite} />
+                        <span>{game.favorite ? 'Quitar favorito' : 'Marcar favorito'}</span>
                       </button>
                       <button className="library-remove-button" disabled={isWorking} onClick={() => removeGame(game)} type="button">Quitar</button>
                     </div>

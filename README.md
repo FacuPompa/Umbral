@@ -2,9 +2,10 @@
 
 Proyecto para hablar de juegos narrativos sin comerse spoilers.
 
-**Estado actual: v1.0.0 (MVP de aprendizaje).** El flujo principal ya está
-completo y validado localmente; todavía no es una versión de producción ni una
-aplicación social terminada.
+**Estado actual: MVP de aprendizaje.** La última release publicada es
+[`v1.0.0`](https://github.com/FacuPompa/Umbral/releases/tag/v1.0.0). El flujo
+principal está validado localmente; todavía no es una versión de producción ni
+una aplicación social terminada.
 
 **Demo en vivo:** [umbral-facupompa.netlify.app](https://umbral-facupompa.netlify.app)
 
@@ -36,6 +37,11 @@ palacios.
   cuentas de acceso.
 - El progreso se crea o actualiza al elegir un checkpoint y se restaura al
   recargar React.
+- Perfil personal en `/me` y biblioteca en `/me/library` para organizar juegos
+  como `Quiero jugar`, `Jugando` o `Terminado` y marcarlos como favoritos.
+- Al guardar progreso por primera vez, el juego entra automáticamente a la
+  biblioteca como `Jugando`; quitarlo de la biblioteca no borra progreso ni
+  publicaciones.
 - Se pueden publicar entradas de texto solamente hasta el checkpoint alcanzado.
 - Cada entrada se clasifica como reflexión, duda, teoría o reseña.
 - Las entradas pueden recibir respuestas directas para formar hilos breves.
@@ -75,6 +81,11 @@ palacios.
 | `POST` | `/api/auth/logout` | Cierra la sesión actual. |
 | `GET` | `/api/me/game-progress` | Consulta el progreso de la persona autenticada. |
 | `PUT` | `/api/me/games/{gameId}/progress` | Guarda el checkpoint alcanzado. |
+| `GET` | `/api/me/library` | Lista la biblioteca de la persona autenticada. |
+| `POST` | `/api/me/library` | Agrega un juego a la biblioteca. |
+| `PATCH` | `/api/me/library/{gameId}/status` | Actualiza el estado de un juego guardado. |
+| `PATCH` | `/api/me/library/{gameId}/favorite` | Marca o quita un juego de favoritos. |
+| `DELETE` | `/api/me/library/{gameId}` | Quita un juego de la biblioteca, sin borrar su progreso. |
 | `GET` | `/api/games/{gameId}/journal-entries` | Lista solo las entradas seguras para el progreso actual. |
 | `POST` | `/api/me/journal-entries` | Publica una entrada en un checkpoint ya alcanzado. |
 | `GET` | `/api/journal-entries/{entryId}/replies` | Lista las respuestas de una entrada visible. |
@@ -130,6 +141,11 @@ recibe la conexión por `SPRING_DATASOURCE_URL`,
 `VITE_API_BASE_URL`. Los valores reales se cargan en los paneles de cada
 plataforma, nunca en el repositorio.
 
+En el plan gratuito de Render, el backend puede detenerse después de un período
+sin tráfico. El home muestra un estado de espera y reintenta el catálogo mientras
+el servicio vuelve a iniciar. Las migraciones de Flyway se ejecutan al arrancar
+el backend y actualizan el esquema de Supabase.
+
 Para verificar el frontend antes de abrir una Pull Request:
 
 ```bash
@@ -139,8 +155,8 @@ npm run check
 
 ## Lo próximo
 
-- Diseñar perfiles públicos y personales, con reseñas escritas, juegos
-  favoritos y métricas que tengan significado real.
+- Diseñar perfiles públicos con reseñas escritas y métricas que tengan
+  significado real.
 - Rediseñar la navegación: una barra flotante contenida, más aire entre
   acciones y un menú de perfil con opciones de cuenta.
 - Crear una identidad propia para Umbral: logo y favicon.
