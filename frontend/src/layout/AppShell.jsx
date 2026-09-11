@@ -67,7 +67,10 @@ export default function AppShell() {
           )}
           {!loading && user && (
             <div className="account-actions">
-              <span className="account-handle">{user.handle}</span>
+              <Link aria-label={`Abrir el perfil de ${user.handle}`} className="account-profile-link" to="/me">
+                <span aria-hidden="true" className="account-avatar">{user.handle.slice(0, 1).toUpperCase()}</span>
+                <span className="account-handle">{user.handle}</span>
+              </Link>
               <button className="future-access future-access-login" onClick={handleLogout} type="button">Cerrar sesión</button>
             </div>
           )}

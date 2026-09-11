@@ -51,19 +51,40 @@ export async function ensureCsrfToken() {
   return csrfToken;
 }
 
-export async function apiRequest(path, options = {}) {
-  const method = (options.method ?? 'GET').toUpperCase();
-  const headers = new Headers(options.headers);
+function clearCsrfToken() {
+  csrfToken = undefined;
+}
 
-  if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
-    const csrf = await ensureCsrfToken();
-    headers.set(csrf.headerName, csrf.token);
-  }
+async function requestWithCsrf(path, options, method) {
+  const headers = new Headers(options.headers);
+  const csrf = await ensureCsrfToken();
+  headers.set(csrf.headerName, csrf.token);
 
   return fetch(apiUrl(path), {
     ...options,
     method,
     headers,
+    credentials: 'include',
+  });
+}
+
+export async function apiRequest(path, options = {}) {
+  const method = (options.method ?? 'GET').toUpperCase();
+
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    const response = await requestWithCsrf(path, options, method);
+
+    if (response.status !== 403) return response;
+
+    // El token puede cambiar al iniciar o cerrar sesión. Lo renovamos una vez
+    // antes de tratar el 403 como un error real de permisos.
+    clearCsrfToken();
+    return requestWithCsrf(path, options, method);
+  }
+
+  return fetch(apiUrl(path), {
+    ...options,
+    method,
     credentials: 'include',
   });
 }
