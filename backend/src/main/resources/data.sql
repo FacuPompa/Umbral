@@ -66,6 +66,24 @@ WHERE app_user.handle = 'umbral-author-demo'
 ON CONFLICT (user_id, game_id) DO UPDATE
 SET checkpoint_id = EXCLUDED.checkpoint_id;
 
+INSERT INTO user_game_library (
+    user_id,
+    game_id,
+    status,
+    favorite,
+    created_at,
+    updated_at
+)
+SELECT
+    progress.user_id,
+    progress.game_id,
+    'PLAYING',
+    FALSE,
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+FROM user_game_progress AS progress
+ON CONFLICT (user_id, game_id) DO NOTHING;
+
 INSERT INTO journal_entries (author_id, checkpoint_id, type, content, created_at)
 SELECT
     app_user.id,

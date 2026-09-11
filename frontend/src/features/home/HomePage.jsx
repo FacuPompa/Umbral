@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import BackendWakeupNotice from '../../components/BackendWakeupNotice';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import HeroGameCarousel from '../games/HeroGameCarousel';
 import { fetchGames } from '../games/gameApi';
@@ -16,20 +17,45 @@ export default function HomePage() {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isSlowToLoad, setIsSlowToLoad] = useState(false);
+  const [requestVersion, setRequestVersion] = useState(0);
 
   useEffect(() => {
+    let isActive = true;
+    let retryTimer;
+    const wakeupTimer = window.setTimeout(() => {
+      if (isActive) setIsSlowToLoad(true);
+    }, 1500);
+
     async function loadCatalog() {
       try {
-        setGames(await fetchGames());
+        setLoading(true);
+        setError(null);
+        setIsSlowToLoad(false);
+        const catalog = await fetchGames();
+        if (isActive) setGames(catalog);
       } catch (requestError) {
-        setError(requestError.message);
+        if (isActive) {
+          setError(requestError);
+          retryTimer = window.setTimeout(() => setRequestVersion((version) => version + 1), 5000);
+        }
       } finally {
-        setLoading(false);
+        window.clearTimeout(wakeupTimer);
+        if (isActive) setLoading(false);
       }
     }
 
     loadCatalog();
-  }, []);
+    return () => {
+      isActive = false;
+      window.clearTimeout(wakeupTimer);
+      window.clearTimeout(retryTimer);
+    };
+  }, [requestVersion]);
+
+  function retryCatalog() {
+    setRequestVersion((version) => version + 1);
+  }
 
   return (
     <main className="landing-page" id="main-content">
@@ -47,8 +73,14 @@ export default function HomePage() {
         </div>
 
         <div className="landing-hero-carousel">
-          {loading && <div className="hero-carousel-placeholder"><LoadingIndicator label="Cargando catálogo" /></div>}
-          {error && <div className="hero-carousel-placeholder">El catálogo no está disponible.</div>}
+          {loading && !isSlowToLoad && (
+            <div className="hero-carousel-placeholder"><LoadingIndicator label="Cargando catálogo" /></div>
+          )}
+          {(isSlowToLoad || error) && (
+            <div className="hero-carousel-placeholder hero-carousel-placeholder-wakeup">
+              <BackendWakeupNotice onRetry={retryCatalog} retrying={loading} />
+            </div>
+          )}
           {!loading && !error && <HeroGameCarousel games={games} />}
         </div>
       </section>
@@ -108,11 +140,20 @@ export default function HomePage() {
             <h2 id="catalog-title">Juegos en Umbral</h2>
             <p>Abrí un juego para registrar tu progreso y entrar a su conversación.</p>
           </div>
-          <span>{games.length} {games.length === 1 ? 'juego disponible' : 'juegos disponibles'}</span>
+          <span>
+            {(loading || error)
+              ? 'Actualizando catálogo'
+              : `${games.length} ${games.length === 1 ? 'juego disponible' : 'juegos disponibles'}`}
+          </span>
         </header>
 
         {loading && <div className="catalog-message"><LoadingIndicator label="Cargando juegos" /></div>}
-        {error && <p className="catalog-message catalog-message-error">{error}</p>}
+        {error && (
+          <div className="catalog-message catalog-message-error">
+            <p>No pudimos conectar con el catálogo todavía. Esperá unos segundos y reintentá.</p>
+            <button className="text-action" type="button" onClick={retryCatalog}>Reintentar catálogo</button>
+          </div>
+        )}
         {!loading && !error && games.length === 0 && <p className="catalog-message">Todavía no hay juegos disponibles.</p>}
         {!loading && !error && games.length > 0 && (
           <ol className="catalog-list">

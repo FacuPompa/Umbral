@@ -1,8 +1,7 @@
 package com.umbral.domain.service;
 
 import com.umbral.domain.dto.UpdateGameProgressRequest;
-import com.umbral.domain.entity.Checkpoint;
-import com.umbral.domain.entity.Game;
+import com.umbral.domain.entity.*;
 import com.umbral.domain.exception.CheckpointDoesNotBelongToGameException;
 import com.umbral.domain.exception.ResourceNotFoundException;
 import com.umbral.domain.repository.CheckpointRepository;
@@ -11,8 +10,6 @@ import com.umbral.domain.repository.UserGameProgressRepository;
 import org.springframework.stereotype.Service;
 
 import com.umbral.domain.dto.GameProgressResponse;
-import com.umbral.domain.entity.User;
-import com.umbral.domain.entity.UserGameProgress;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -26,12 +23,14 @@ public class GameProgressService {
     private final CheckpointRepository checkpointRepository;
     private final UserGameProgressRepository userGameProgressRepository;
     private final CurrentUserResolver currentUserResolver;
+    private final UserGameLibraryService userGameLibraryService;
 
-    public GameProgressService(GameRepository gameRepository, CheckpointRepository checkpointRepository, UserGameProgressRepository userGameProgressRepository, CurrentUserResolver currentUserResolver) {
+    public GameProgressService(GameRepository gameRepository, CheckpointRepository checkpointRepository, UserGameProgressRepository userGameProgressRepository, CurrentUserResolver currentUserResolver, UserGameLibraryService userGameLibraryService) {
         this.gameRepository = gameRepository;
         this.checkpointRepository = checkpointRepository;
         this.userGameProgressRepository = userGameProgressRepository;
         this.currentUserResolver = currentUserResolver;
+        this.userGameLibraryService = userGameLibraryService;
     }
 
     @Transactional(readOnly = true)
@@ -72,6 +71,8 @@ public class GameProgressService {
         }
 
         UserGameProgress savedProgress = userGameProgressRepository.save(progress);
+
+        userGameLibraryService.ensureGameIsInLibraryAsPlaying(currentUser, game);
 
         return toResponse(savedProgress);
     }

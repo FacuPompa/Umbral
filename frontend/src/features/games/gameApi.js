@@ -21,6 +21,26 @@ export function fetchGameProgress() {
   return getJson('/api/me/game-progress', 'No se pudo cargar el progreso.');
 }
 
+export function fetchCurrentUserLibrary() {
+  return getJson('/api/me/library', 'No se pudo cargar tu biblioteca.');
+}
+
+export function addGameToCurrentUserLibrary(gameId, status = 'WANT_TO_PLAY') {
+  return sendJson('/api/me/library', 'POST', { gameId, status }, 'No se pudo agregar el juego a tu biblioteca.');
+}
+
+export function updateCurrentUserLibraryGameStatus(gameId, status) {
+  return sendJson(`/api/me/library/${gameId}/status`, 'PATCH', { status }, 'No se pudo actualizar el estado del juego.');
+}
+
+export function updateCurrentUserLibraryGameFavorite(gameId, favorite) {
+  return sendJson(`/api/me/library/${gameId}/favorite`, 'PATCH', { favorite }, 'No se pudo actualizar el favorito.');
+}
+
+export function removeGameFromCurrentUserLibrary(gameId) {
+  return sendJson(`/api/me/library/${gameId}`, 'DELETE', {}, 'No se pudo quitar el juego de tu biblioteca.');
+}
+
 export function updateGameProgress(gameId, checkpointId) {
   return sendJson(`/api/me/games/${gameId}/progress`, 'PUT', { checkpointId }, 'No se pudo guardar el progreso.');
 }

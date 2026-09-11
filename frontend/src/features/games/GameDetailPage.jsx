@@ -4,7 +4,9 @@ import { useAuth } from '../auth/useAuth';
 import {
   createJournalEntry,
   createJournalReply,
+  addGameToCurrentUserLibrary,
   fetchCheckpoints,
+  fetchCurrentUserLibrary,
   fetchGameProgress,
   fetchGames,
   fetchJournalEntries,
@@ -30,12 +32,19 @@ const entryTypeLabels = {
   REVIEW: 'Reseña',
 };
 
+const libraryStatusLabels = {
+  WANT_TO_PLAY: 'Quiero jugar',
+  PLAYING: 'Jugando',
+  COMPLETED: 'Terminado',
+};
+
 export default function GameDetailPage() {
   const { gameId } = useParams();
   const location = useLocation();
   const { user, loading: loadingUser } = useAuth();
   const [game, setGame] = useState(null);
   const [progress, setProgress] = useState(null);
+  const [libraryEntry, setLibraryEntry] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [checkpoints, setCheckpoints] = useState([]);
@@ -43,6 +52,8 @@ export default function GameDetailPage() {
   const [checkpointsError, setCheckpointsError] = useState(null);
   const [savingProgress, setSavingProgress] = useState(false);
   const [savingProgressError, setSavingProgressError] = useState(null);
+  const [savingLibrary, setSavingLibrary] = useState(false);
+  const [libraryError, setLibraryError] = useState(null);
   const [checkpointSuggestionLabel, setCheckpointSuggestionLabel] = useState('');
   const [checkpointSuggestionPosition, setCheckpointSuggestionPosition] = useState('');
   const [savingCheckpointSuggestion, setSavingCheckpointSuggestion] = useState(false);
@@ -74,6 +85,7 @@ export default function GameDetailPage() {
       setError(null);
       setGame(null);
       setProgress(null);
+      setLibraryEntry(null);
       setCheckpoints([]);
       setJournalEntries([]);
       setOpenRepliesEntryId(null);
@@ -85,9 +97,10 @@ export default function GameDetailPage() {
       }
 
       try {
-        const [gamesFromApi, progressFromApi] = await Promise.all([
+        const [gamesFromApi, progressFromApi, libraryFromApi] = await Promise.all([
           fetchGames(),
           user ? fetchGameProgress() : Promise.resolve([]),
+          user ? fetchCurrentUserLibrary() : Promise.resolve([]),
         ]);
         const requestedGame = gamesFromApi.find((catalogGame) => catalogGame.id === numericGameId);
 
@@ -96,6 +109,7 @@ export default function GameDetailPage() {
         const savedProgress = progressFromApi.find((gameProgress) => gameProgress.gameId === numericGameId) ?? null;
         setGame(requestedGame);
         setProgress(savedProgress);
+        setLibraryEntry(libraryFromApi.find((entry) => entry.gameId === numericGameId) ?? null);
         setEntryCheckpointId(savedProgress ? String(savedProgress.checkpointId) : '');
       } catch (requestError) {
         setError(requestError.message);
@@ -170,12 +184,31 @@ export default function GameDetailPage() {
       const savedProgress = await updateGameProgress(game.id, pendingCheckpoint.id);
       setProgress(savedProgress);
       setEntryCheckpointId(String(savedProgress.checkpointId));
+      const library = await fetchCurrentUserLibrary();
+      setLibraryEntry(library.find((entry) => entry.gameId === game.id) ?? null);
       await loadJournalEntries(game.id);
       setPendingCheckpoint(null);
     } catch (requestError) {
       setSavingProgressError(requestError.message);
     } finally {
       setSavingProgress(false);
+    }
+  }
+
+  async function addGameToLibrary() {
+    if (!user) {
+      setAccountPrompt('guardar este juego en tu biblioteca');
+      return;
+    }
+
+    setSavingLibrary(true);
+    setLibraryError(null);
+    try {
+      setLibraryEntry(await addGameToCurrentUserLibrary(game.id));
+    } catch (requestError) {
+      setLibraryError(requestError.message);
+    } finally {
+      setSavingLibrary(false);
     }
   }
 
@@ -302,6 +335,13 @@ export default function GameDetailPage() {
             <dd>{user ? (progress ? progress.checkpointLabel : 'Todavía no elegiste un tramo') : 'Iniciá sesión para guardar avance'}</dd>
           </dl>
           <p>{user && progress ? 'Esto define las conversaciones que podés leer y los tramos sobre los que podés publicar.' : 'Tu avance personal define las conversaciones que Umbral puede mostrarte sin spoilers.'}</p>
+          {user && libraryEntry && <Link className="text-action" to="/me/library">En biblioteca · {libraryStatusLabels[libraryEntry.status]}</Link>}
+          {user && !libraryEntry && (
+            <button className="button-secondary" disabled={savingLibrary} onClick={addGameToLibrary} type="button">
+              {savingLibrary ? <LoadingIndicator label="Guardando en biblioteca" /> : 'Guardar para jugar'}
+            </button>
+          )}
+          {libraryError && <p className="status-message status-message-error" role="alert">{libraryError}</p>}
         </aside>
       </section>
 

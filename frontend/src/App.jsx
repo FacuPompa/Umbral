@@ -6,6 +6,8 @@ import HomePage from './features/home/HomePage';
 import GameDetailPage from './features/games/GameDetailPage';
 import GameSuggestionPage from './features/games/GameSuggestionPage';
 import GameModerationPage from './features/games/GameModerationPage';
+import ProfilePage from './features/library/ProfilePage';
+import LibraryPage from './features/library/LibraryPage';
 
 export default function App() {
   return (
@@ -18,6 +20,8 @@ export default function App() {
           <Route path="games/:gameId" element={<GameDetailPage />} />
           <Route path="suggestions/new" element={<GameSuggestionPage />} />
           <Route path="moderation/games" element={<GameModerationPage />} />
+          <Route path="me" element={<ProfilePage />} />
+          <Route path="me/library" element={<LibraryPage />} />
           <Route path="*" element={<Navigate replace to="/" />} />
         </Route>
       </Routes>
