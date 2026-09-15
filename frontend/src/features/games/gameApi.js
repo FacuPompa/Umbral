@@ -29,6 +29,10 @@ export function fetchPublicProfile(handle) {
   return getJson(`/api/users/${encodeURIComponent(handle)}`, 'No encontramos ese perfil.');
 }
 
+export function searchCatalogAndUsers(query) {
+  return getJson(`/api/search?query=${encodeURIComponent(query)}`, 'No se pudo completar la búsqueda.');
+}
+
 export function addGameToCurrentUserLibrary(gameId, status = 'WANT_TO_PLAY') {
   return sendJson('/api/me/library', 'POST', { gameId, status }, 'No se pudo agregar el juego a tu biblioteca.');
 }

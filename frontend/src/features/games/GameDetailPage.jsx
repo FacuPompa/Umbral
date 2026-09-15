@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
 import {
@@ -14,7 +14,14 @@ import {
   submitCheckpointSuggestion,
   updateGameProgress,
 } from './gameApi';
-import { getGameArtwork, getGameInitials } from './gameArtwork';
+import { getGameArtwork } from './gameArtwork';
+import { ArrowLeft, Check, MessageCircle, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input, Textarea } from '@/components/ui/field';
+import GameArtwork from '@/components/GameArtwork';
+import StatusMessage from '@/components/StatusMessage';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import AccountPrompt from '@/components/AccountPrompt';
 import LoadingIndicator from '../../components/LoadingIndicator';
 
 function formatEntryDate(createdAt) {
@@ -40,6 +47,7 @@ const libraryStatusLabels = {
 
 export default function GameDetailPage() {
   const { gameId } = useParams();
+  const mainRef = useRef(null);
   const location = useLocation();
   const { user, loading: loadingUser } = useAuth();
   const [game, setGame] = useState(null);
@@ -297,13 +305,13 @@ export default function GameDetailPage() {
     }
   }
 
-  if (loading || loadingUser) return <main className="page-state" id="main-content"><LoadingIndicator label="Cargando juego" /></main>;
-  if (error) return <main className="page-state page-state-error" id="main-content">{error}</main>;
+  if (loading || loadingUser) return <main className="grid min-h-[50vh] content-center justify-items-start gap-4 py-12" id="main-content"><LoadingIndicator label="Cargando juego" showLabel /></main>;
+  if (error) return <main className="py-12 text-destructive" id="main-content">{error}</main>;
   if (!game) {
     return (
-      <main className="page-state" id="main-content">
+      <main className="grid min-h-[50vh] content-center justify-items-start gap-4 py-12" id="main-content">
         <p>Ese juego no existe en el catálogo.</p>
-        <Link className="detail-back" to="/">Volver al inicio <span aria-hidden="true">→</span></Link>
+        <Link className="inline-flex min-h-11 items-center text-base underline underline-offset-4" to="/">Volver al inicio <span aria-hidden="true">→</span></Link>
       </main>
     );
   }
@@ -314,61 +322,56 @@ export default function GameDetailPage() {
   const artwork = game.coverImageUrl ?? getGameArtwork(game.title);
 
   return (
-    <main className="page-main detail-page" id="main-content">
-      <Link className="detail-back" to="/">← Volver al catálogo</Link>
+    <main className="grid gap-8 py-8 md:gap-10 md:py-12" id="main-content" ref={mainRef} tabIndex={-1}>
+      <Button asChild variant="ghost" className="w-fit px-0"><Link to="/#catalogo"><ArrowLeft aria-hidden="true" />Volver al catálogo</Link></Button>
 
-      <section className="game-hero">
-        <div className="game-detail-artwork">
-          {artwork ? (
-            <img src={artwork} alt={`Arte de ${game.title}`} />
-          ) : (
-            <span aria-hidden="true">{getGameInitials(game.title)}</span>
-          )}
+      <section className="grid grid-cols-[64px_minmax(0,1fr)] items-start gap-4 border-b border-border pb-8 sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-6" aria-labelledby="game-title">
+        <GameArtwork src={artwork} title={game.title} className="h-20 w-16 sm:h-40 sm:w-30" />
+        <div className="grid min-w-0 gap-4">
+          <h1 id="game-title" className="break-words text-[28px] leading-[34px] font-semibold tracking-[-0.02em] sm:text-4xl sm:leading-[42px]">{game.title}</h1>
+          <p className="max-w-[720px] break-words text-base leading-6 text-muted-foreground">{game.description}</p>
+          <div>
+            {user && libraryEntry ? (
+              <Button asChild variant="outline"><Link to="/me/library"><Check aria-hidden="true" />En biblioteca · {libraryStatusLabels[libraryEntry.status]}</Link></Button>
+            ) : (
+              <Button variant="outline" disabled={savingLibrary} onClick={addGameToLibrary} type="button">
+                {savingLibrary ? <LoadingIndicator label="Guardando en biblioteca" showLabel /> : <><Plus aria-hidden="true" />Guardar para jugar</>}
+              </Button>
+            )}
+          </div>
+          {libraryError && <StatusMessage kind="error">{libraryError}</StatusMessage>}
         </div>
-        <div className="game-hero-copy">
-          <h1>{game.title}</h1>
-          <p>{game.description}</p>
-        </div>
-        <aside className="progress-summary" aria-label="Resumen de tu avance">
-          <dl>
-            <dt>Tu avance guardado</dt>
-            <dd>{user ? (progress ? progress.checkpointLabel : 'Todavía no elegiste un tramo') : 'Iniciá sesión para guardar avance'}</dd>
-          </dl>
-          <p>{user && progress ? 'Esto define las conversaciones que podés leer y los tramos sobre los que podés publicar.' : 'Tu avance personal define las conversaciones que Umbral puede mostrarte sin spoilers.'}</p>
-          {user && libraryEntry && <Link className="text-action" to="/me/library">En biblioteca · {libraryStatusLabels[libraryEntry.status]}</Link>}
-          {user && !libraryEntry && (
-            <button className="button-secondary" disabled={savingLibrary} onClick={addGameToLibrary} type="button">
-              {savingLibrary ? <LoadingIndicator label="Guardando en biblioteca" /> : 'Guardar para jugar'}
-            </button>
-          )}
-          {libraryError && <p className="status-message status-message-error" role="alert">{libraryError}</p>}
-        </aside>
       </section>
 
-      <div className="detail-workspace">
-        <section className="progress-panel" aria-labelledby="checkpoint-title">
-          <header className="panel-heading">
+      <div className="grid items-start gap-10 lg:grid-cols-[280px_minmax(0,720px)] lg:gap-12">
+        <section className="grid min-w-0 gap-6" aria-labelledby="checkpoint-title">
+          <header className="grid gap-3 [&_h2]:text-2xl [&_h2]:leading-[30px] [&_h2]:font-semibold [&_h2]:tracking-normal [&_p]:text-base [&_p]:leading-6 [&_p]:text-muted-foreground">
             <h2 id="checkpoint-title">¿Hasta dónde llegaste?</h2>
             <p>Marcá el último tramo que alcanzaste. Podés actualizarlo cuando avances.</p>
           </header>
-          {loadingCheckpoints && <div className="status-message"><LoadingIndicator label="Cargando checkpoints" /></div>}
-          {checkpointsError && <p className="status-message status-message-error">{checkpointsError}</p>}
+          <dl className="grid gap-2 border-l-2 border-primary pl-4" aria-label="Resumen de tu avance">
+            <dt className="text-sm leading-5 text-muted-foreground">Tu avance guardado</dt>
+            <dd className="break-words text-base leading-6 font-medium">{user ? (progress ? progress.checkpointLabel : 'Todavía no elegiste un tramo') : 'Iniciá sesión para guardar avance'}</dd>
+          </dl>
+          {loadingCheckpoints && <LoadingIndicator label="Cargando checkpoints" showLabel />}
+          {checkpointsError && <StatusMessage kind="error">{checkpointsError}</StatusMessage>}
           {!loadingCheckpoints && !checkpointsError && (
-            <ol className="checkpoint-list">
+            <ol className="border-t border-border">
               {checkpoints.map((checkpoint) => {
                 const isCurrentCheckpoint = progress?.checkpointId === checkpoint.id;
                 return (
                   <li key={checkpoint.id}>
                     <button
-                      className={`checkpoint-button ${isCurrentCheckpoint ? 'checkpoint-button-current' : ''}`}
+                      className={`grid w-full grid-cols-[24px_minmax(0,1fr)] items-center gap-x-3 gap-y-1 border-b border-l-2 border-border px-3 py-3 text-left text-base leading-6 hover:bg-accent disabled:opacity-60 ${isCurrentCheckpoint ? 'border-l-primary bg-accent text-foreground' : 'border-l-transparent text-muted-foreground'}`}
+                      aria-current={isCurrentCheckpoint ? 'step' : undefined}
                       disabled={savingProgress}
                       onClick={() => requestCheckpointChange(checkpoint)}
                       type="button"
                     >
-                      <span className="checkpoint-position">{String(checkpoint.position).padStart(2, '0')}</span>
-                      <span className="checkpoint-label">{checkpoint.label}</span>
-                      <span className="checkpoint-state">
-                        {isCurrentCheckpoint && (savingProgress ? <LoadingIndicator label="Guardando avance" /> : 'Actual')}
+                      <span className="text-sm leading-5 text-muted-foreground">{String(checkpoint.position).padStart(2, '0')}</span>
+                      <span className="min-w-0 break-words">{checkpoint.label}</span>
+                      <span className="col-start-2 flex items-center gap-1 text-sm leading-5 text-primary">
+                        {isCurrentCheckpoint && (savingProgress ? <LoadingIndicator label="Guardando avance" showLabel /> : <><Check aria-hidden="true" className="size-4" />Actual</>)}
                       </span>
                     </button>
                   </li>
@@ -377,12 +380,12 @@ export default function GameDetailPage() {
             </ol>
           )}
           {user && !loadingCheckpoints && !checkpointsError && (
-            <form className="checkpoint-suggestion-form" onSubmit={createCheckpointSuggestion}>
+            <form className="grid gap-4 border-t border-border pt-6 [&_h3]:text-base [&_h3]:font-semibold [&_p]:text-sm [&_p]:leading-5 [&_p]:text-muted-foreground" onSubmit={createCheckpointSuggestion}>
               <h3>¿Falta un checkpoint?</h3>
               <p>Proponelo para que una persona moderadora pueda revisarlo antes de habilitarlo.</p>
-              <label>
+              <label className="grid gap-2 text-base leading-6 font-medium">
                 Nombre del tramo
-                <input
+                <Input
                   maxLength="255"
                   onChange={(event) => setCheckpointSuggestionLabel(event.target.value)}
                   placeholder="Por ejemplo: Primer palacio"
@@ -390,9 +393,9 @@ export default function GameDetailPage() {
                   value={checkpointSuggestionLabel}
                 />
               </label>
-              <label>
+              <label className="grid gap-2 text-base leading-6 font-medium">
                 Posición en la historia
-                <input
+                <Input
                   min="1"
                   onChange={(event) => setCheckpointSuggestionPosition(event.target.value)}
                   required
@@ -400,44 +403,43 @@ export default function GameDetailPage() {
                   value={checkpointSuggestionPosition}
                 />
               </label>
-              <button
-                className="button-secondary"
+              <Button
+                variant="outline"
                 disabled={savingCheckpointSuggestion || !checkpointSuggestionLabel.trim() || !checkpointSuggestionPosition}
                 type="submit"
               >
-                {savingCheckpointSuggestion ? <LoadingIndicator label="Enviando checkpoint" /> : 'Enviar propuesta'}
-              </button>
-              {checkpointSuggestionNotice && <p className="checkpoint-suggestion-notice" role="status">{checkpointSuggestionNotice}</p>}
-              {checkpointSuggestionError && <p className="checkpoint-suggestion-error" role="alert">{checkpointSuggestionError}</p>}
+                {savingCheckpointSuggestion ? <LoadingIndicator label="Enviando checkpoint" showLabel /> : 'Enviar propuesta'}
+              </Button>
+              {checkpointSuggestionNotice && <StatusMessage kind="success">{checkpointSuggestionNotice}</StatusMessage>}
+              {checkpointSuggestionError && <StatusMessage kind="error">{checkpointSuggestionError}</StatusMessage>}
             </form>
           )}
-          {savingProgressError && <p className="status-message status-message-error">{savingProgressError}</p>}
         </section>
 
-        <div className="conversation-column">
-          <section className="compose-panel" aria-labelledby="entry-title">
-            <header className="panel-heading">
+        <div className="grid min-w-0 gap-12">
+          <section className="grid gap-6" aria-labelledby="entry-title">
+            <header className="grid gap-3 [&_h2]:text-2xl [&_h2]:leading-[30px] [&_h2]:font-semibold [&_h2]:tracking-normal [&_p]:text-base [&_p]:leading-6 [&_p]:text-muted-foreground">
               <h2 id="entry-title">Compartí lo que ya conocés</h2>
               <p>Publicá dentro del límite que marca tu progreso.</p>
             </header>
             {!user && (
-              <div className="account-callout">
+              <div className="grid justify-items-start gap-4">
                 <p>Para publicar una reflexión, duda, teoría o reseña necesitás una cuenta y un avance guardado.</p>
-                <button className="button-primary" onClick={() => setAccountPrompt('publicar una entrada')} type="button">Crear cuenta para publicar</button>
+                <Button onClick={() => setAccountPrompt('publicar una entrada')} type="button">Crear cuenta para publicar</Button>
               </div>
             )}
-            {user && !progress && <p className="status-message">Marcá tu avance antes de publicar una entrada.</p>}
+            {user && !progress && <StatusMessage>Marcá tu avance antes de publicar una entrada.</StatusMessage>}
             {user && progress && !loadingCheckpoints && !checkpointsError && (
-              <form className="entry-form" onSubmit={createEntry}>
-                <label>
-                  Esta entrada habla hasta
-                  <select value={entryCheckpointId} onChange={(event) => setEntryCheckpointId(event.target.value)}>
+              <form className="grid gap-5" onSubmit={createEntry}>
+                <label className="grid gap-2 text-base leading-6 font-medium">
+                  <span id="entry-checkpoint-label">Esta entrada habla hasta</span>
+                  <select aria-labelledby="entry-checkpoint-label" className="min-h-11 w-full min-w-0 rounded-md border border-input bg-popover px-3 text-base font-normal text-foreground" value={entryCheckpointId} onChange={(event) => setEntryCheckpointId(event.target.value)}>
                     {availableCheckpoints.map((checkpoint) => <option key={checkpoint.id} value={checkpoint.id}>{checkpoint.label}</option>)}
                   </select>
                 </label>
-                <label>
-                  Tipo de publicación
-                  <select value={entryType} onChange={(event) => setEntryType(event.target.value)}>
+                <label className="grid gap-2 text-base leading-6 font-medium">
+                  <span id="entry-type-label">Tipo de publicación</span>
+                  <select aria-labelledby="entry-type-label" className="min-h-11 w-full min-w-0 rounded-md border border-input bg-popover px-3 text-base font-normal text-foreground" value={entryType} onChange={(event) => setEntryType(event.target.value)}>
                     <option value="">Elegí una opción</option>
                     <option value="REFLECTION">Reflexión</option>
                     <option value="QUESTION">Duda</option>
@@ -445,100 +447,100 @@ export default function GameDetailPage() {
                     <option value="REVIEW">Reseña</option>
                   </select>
                 </label>
-                <label>
+                <label className="grid gap-2 text-base leading-6 font-medium">
                   Tu entrada
-                  <textarea value={entryContent} maxLength={5000} onChange={(event) => setEntryContent(event.target.value)} placeholder="Compartí lo que te dejó este tramo..." />
+                  <Textarea value={entryContent} maxLength={5000} onChange={(event) => setEntryContent(event.target.value)} placeholder="Compartí lo que te dejó este tramo..." />
                 </label>
-                <div className="form-footer">
+                <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between [&_p]:max-w-[400px] [&_p]:text-sm [&_p]:leading-5 [&_p]:text-muted-foreground">
                   <p>Solo podés publicar sobre checkpoints que ya alcanzaste.</p>
-                  <button className="button-primary" disabled={savingEntry || !entryCheckpointId || !entryType || !entryContent.trim()} type="submit">
-                    {savingEntry ? <LoadingIndicator label="Publicando entrada" /> : 'Publicar'}
-                  </button>
+                  <Button  disabled={savingEntry || !entryCheckpointId || !entryType || !entryContent.trim()} type="submit">
+                    {savingEntry ? <LoadingIndicator label="Publicando entrada" showLabel /> : 'Publicar'}
+                  </Button>
                 </div>
               </form>
             )}
-            {user && savingEntryError && <p className="status-message status-message-error">{savingEntryError}</p>}
+            {user && savingEntryError && <StatusMessage kind="error">{savingEntryError}</StatusMessage>}
           </section>
 
-          <section className="feed-panel" aria-labelledby="journal-title">
-            <header className="panel-heading">
+          <section className="grid gap-6 border-t border-border pt-8" aria-labelledby="journal-title">
+            <header className="grid gap-3 [&_h2]:text-2xl [&_h2]:leading-[30px] [&_h2]:font-semibold [&_h2]:tracking-normal [&_p]:text-base [&_p]:leading-6 [&_p]:text-muted-foreground">
               <h2 id="journal-title">Conversaciones que ya podés leer</h2>
-              <p>El servidor filtra cada entrada antes de enviarla.</p>
+              <p>Conversaciones de tu tramo y de los anteriores.</p>
             </header>
             {!user && (
-              <div className="account-callout">
+              <div className="grid justify-items-start gap-4">
                 <p>Las conversaciones se filtran según el tramo que cada persona alcanzó. Creá una cuenta para guardar el tuyo y ver solo lo que ya conocés.</p>
-                <button className="button-secondary" onClick={() => setAccountPrompt('leer conversaciones seguras')} type="button">Crear cuenta</button>
+                <Button variant="outline" onClick={() => setAccountPrompt('leer conversaciones seguras')} type="button">Crear cuenta</Button>
               </div>
             )}
-            {user && loadingJournalEntries && <div className="status-message"><LoadingIndicator label="Cargando entradas" /></div>}
-            {user && journalEntriesError && <p className="status-message status-message-error">{journalEntriesError}</p>}
+            {user && loadingJournalEntries && <LoadingIndicator label="Cargando entradas" showLabel />}
+            {user && journalEntriesError && <StatusMessage kind="error">{journalEntriesError}</StatusMessage>}
             {user && !loadingJournalEntries && !journalEntriesError && journalEntries.length === 0 && (
-              <p className="empty-feed">Por ahora no hay nada que podamos mostrarte sin spoilearte. Volvé cuando avances un poco más.</p>
+              <StatusMessage>Por ahora no hay nada que podamos mostrarte sin spoilearte. Volvé cuando avances un poco más.</StatusMessage>
             )}
             {user && !loadingJournalEntries && !journalEntriesError && journalEntries.length > 0 && (
-              <ol className="journal-list">
+              <ol className="border-t border-border">
                 {journalEntries.map((entry) => {
                   const isRepliesOpen = openRepliesEntryId === entry.id;
                   const replies = repliesByEntryId[entry.id] ?? [];
                   const isLoadingReplies = loadingRepliesEntryId === entry.id;
 
                   return (
-                    <li key={entry.id} className="journal-entry">
-                      <p className="journal-entry-meta">
+                    <li key={entry.id} className="grid min-w-0 gap-4 border-b border-border py-6">
+                      <p className="break-words text-sm leading-5 text-muted-foreground">
                         @{entry.authorHandle} · {entry.checkpointLabel} ·{' '}
-                        <span className="entry-type">{entryTypeLabels[entry.type] ?? entry.type}</span>{' '}
+                        <span className="font-medium text-foreground">{entryTypeLabels[entry.type] ?? entry.type}</span>{' '}
                         · {formatEntryDate(entry.createdAt)}
                       </p>
-                      <p>{entry.content}</p>
-                      <button
-                        className="reply-toggle"
+                      <p className="whitespace-pre-wrap break-words text-[17px] leading-[27px] text-foreground sm:text-lg sm:leading-[29px]">{entry.content}</p>
+                      <Button
+                        variant="ghost" className="w-fit px-0"
                         type="button"
                         aria-expanded={isRepliesOpen}
                         onClick={() => toggleReplies(entry.id)}
                       >
-                        {isRepliesOpen ? 'Ocultar respuestas' : 'Ver respuestas'}
-                      </button>
+                        <MessageCircle aria-hidden="true" />{isRepliesOpen ? 'Ocultar respuestas' : 'Ver respuestas'}
+                      </Button>
 
                       {isRepliesOpen && (
-                        <div className="reply-thread">
-                          {isLoadingReplies && <p className="reply-status"><LoadingIndicator label="Cargando respuestas" /></p>}
-                          {repliesError && <p className="reply-status status-message-error">{repliesError}</p>}
+                        <div className="grid min-w-0 gap-5 border-l border-border pl-3 sm:pl-4">
+                          {isLoadingReplies && <p className="text-sm leading-5 text-muted-foreground"><LoadingIndicator label="Cargando respuestas" showLabel /></p>}
+                          {repliesError && <StatusMessage kind="error">{repliesError}</StatusMessage>}
                           {!isLoadingReplies && !repliesError && replies.length === 0 && (
-                            <p className="reply-status">Todavía no hay respuestas. Podés abrir la conversación.</p>
+                            <p className="text-sm leading-5 text-muted-foreground">Todavía no hay respuestas. Podés abrir la conversación.</p>
                           )}
                           {!isLoadingReplies && !repliesError && replies.length > 0 && (
-                            <ol className="reply-list">
+                            <ol className="grid gap-5">
                               {replies.map((reply) => (
-                                <li key={reply.id} className="journal-reply">
-                                  <p className="journal-entry-meta">
+                                <li key={reply.id} className="grid min-w-0 gap-3 border-b border-border pb-5 last:border-0">
+                                  <p className="break-words text-sm leading-5 text-muted-foreground">
                                     @{reply.authorHandle} · {formatEntryDate(reply.createdAt)}
                                   </p>
-                                  <p>{reply.content}</p>
+                                  <p className="whitespace-pre-wrap break-words text-[17px] leading-[27px] text-foreground sm:text-lg sm:leading-[29px]">{reply.content}</p>
                                 </li>
                               ))}
                             </ol>
                           )}
                           {!isLoadingReplies && !repliesError && (
-                            <form className="reply-form" onSubmit={(event) => createReply(event, entry.id)}>
-                              <label>
+                            <form className="grid gap-4 border-t border-border pt-5" onSubmit={(event) => createReply(event, entry.id)}>
+                              <label className="grid gap-2 text-base leading-6 font-medium">
                                 Tu respuesta
-                                <textarea
+                                <Textarea
                                   value={replyContent}
                                   maxLength={5000}
                                   onChange={(event) => setReplyContent(event.target.value)}
                                   placeholder="Sumate a la conversación sin adelantar nada..."
                                 />
                               </label>
-                              <div className="reply-form-footer">
+                              <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between [&_p]:max-w-[400px] [&_p]:text-sm [&_p]:leading-5 [&_p]:text-muted-foreground">
                                 <p>Esta respuesta pertenece al mismo tramo que la entrada.</p>
-                                <button className="button-primary" disabled={savingReply || !replyContent.trim()} type="submit">
-                                  {savingReply ? <LoadingIndicator label="Publicando respuesta" /> : 'Responder'}
-                                </button>
+                                <Button  disabled={savingReply || !replyContent.trim()} type="submit">
+                                  {savingReply ? <LoadingIndicator label="Publicando respuesta" showLabel /> : 'Responder'}
+                                </Button>
                               </div>
                             </form>
                           )}
-                          {savingReplyError && <p className="reply-status status-message-error">{savingReplyError}</p>}
+                          {savingReplyError && <StatusMessage kind="error">{savingReplyError}</StatusMessage>}
                         </div>
                       )}
                     </li>
@@ -550,34 +552,12 @@ export default function GameDetailPage() {
         </div>
       </div>
 
-      {pendingCheckpoint && (
-        <div aria-labelledby="confirm-progress-title" aria-modal="true" className="dialog-backdrop" role="dialog">
-          <section className="dialog-panel">
-            <h2 id="confirm-progress-title">¿Guardar este avance?</h2>
-            <p>Vas a marcar <strong>{pendingCheckpoint.label}</strong> como el último tramo que alcanzaste. Umbral ajustará las conversaciones disponibles a partir de este punto.</p>
-            {savingProgressError && <p className="form-error" role="alert">{savingProgressError}</p>}
-            <div className="dialog-actions">
-              <button className="button-secondary" disabled={savingProgress} onClick={() => setPendingCheckpoint(null)} type="button">Cancelar</button>
-              <button className="button-primary" disabled={savingProgress} onClick={confirmCheckpointChange} type="button">
-                {savingProgress ? <LoadingIndicator label="Guardando avance" /> : 'Guardar avance'}
-              </button>
-            </div>
-          </section>
-        </div>
-      )}
-
-      {accountPrompt && (
-        <div aria-labelledby="account-prompt-title" aria-modal="true" className="dialog-backdrop" role="dialog">
-          <section className="dialog-panel">
-            <h2 id="account-prompt-title">Creá una cuenta para {accountPrompt}</h2>
-            <p>Con una cuenta podés guardar tu punto del juego y Umbral muestra solo las conversaciones que ya son seguras para vos.</p>
-            <div className="dialog-actions">
-              <button className="button-secondary" onClick={() => setAccountPrompt(null)} type="button">Seguir mirando</button>
-              <Link className="button-primary" state={{ from: location }} to="/register">Crear cuenta</Link>
-            </div>
-          </section>
-        </div>
-      )}
+      <ConfirmDialog open={Boolean(pendingCheckpoint)} onOpenChange={(open) => { if (!open) setPendingCheckpoint(null); }}
+        title="¿Guardar este avance?"
+        description={<>Vas a marcar <strong>{pendingCheckpoint?.label}</strong> como el último tramo que alcanzaste. Umbral ajustará las conversaciones disponibles a partir de este punto.</>}
+        confirmLabel="Guardar avance" pendingLabel="Guardando avance" busy={savingProgress}
+        error={savingProgressError} onConfirm={confirmCheckpointChange} fallbackFocusRef={mainRef} />
+      <AccountPrompt action={accountPrompt} onClose={() => setAccountPrompt(null)} from={location} fallbackFocusRef={mainRef} />
     </main>
   );
 }

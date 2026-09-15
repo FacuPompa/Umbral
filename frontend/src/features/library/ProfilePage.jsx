@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
+import ProfileIdentity from '@/components/ProfileIdentity';
+import LibrarySummary from '@/components/LibrarySummary';
+import StatusMessage from '@/components/StatusMessage';
+import { Button } from '@/components/ui/button';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import { useAuth } from '../auth/useAuth';
 import { fetchCurrentUserLibrary } from '../games/gameApi';
@@ -44,31 +48,19 @@ export default function ProfilePage() {
   const favoriteCount = library.filter((game) => game.favorite).length;
 
   return (
-    <main className="page-main profile-page" id="main-content">
-      <header className="profile-header">
-        <div aria-hidden="true" className="profile-avatar">{user.handle.slice(0, 1).toUpperCase()}</div>
-        <div className="profile-header-copy">
-          <h1>{user.handle}</h1>
-          <p>Tu espacio para seguir juegos y volver a las conversaciones que ya podés leer.</p>
-        </div>
-      </header>
-
-      <Link className="text-action profile-public-link" to={`/users/${encodeURIComponent(user.handle)}`}>Ver perfil público</Link>
-
-      {loading && <div className="inline-loader"><LoadingIndicator label="Cargando perfil" /></div>}
-      {error && <p className="status-message status-message-error" role="alert">{error}</p>}
+    <main className="grid w-full max-w-[840px] gap-8 py-8 md:gap-10 md:py-12" id="main-content">
+      <ProfileIdentity handle={user.handle} description="Tu espacio para seguir juegos y volver a las conversaciones que ya podés leer." />
+      <div><Button asChild variant="outline"><Link to={`/users/${encodeURIComponent(user.handle)}`}>Ver perfil público</Link></Button></div>
+      {loading && <LoadingIndicator label="Cargando perfil" showLabel />}
+      {error && <StatusMessage kind="error">{error}</StatusMessage>}
       {!loading && !error && (
-        <section className="profile-overview" aria-labelledby="profile-library-title">
-          <div>
-            <h2 id="profile-library-title">Tu biblioteca</h2>
-            <p>Organizá los juegos que querés jugar, los que estás siguiendo y los que terminaste.</p>
+        <section className="grid justify-items-start gap-6 border-t border-border pt-8" aria-labelledby="profile-library-title">
+          <div className="grid gap-3">
+            <h2 className="text-2xl leading-[30px] font-semibold tracking-normal" id="profile-library-title">Tu biblioteca</h2>
+            <p className="text-base leading-6 text-muted-foreground">Organizá los juegos que querés jugar, los que estás siguiendo y los que terminaste.</p>
           </div>
-          <dl className="profile-stats">
-            <div><dt>En biblioteca</dt><dd>{library.length}</dd></div>
-            <div><dt>Favoritos</dt><dd>{favoriteCount}</dd></div>
-            <div><dt>Terminados</dt><dd>{completedCount}</dd></div>
-          </dl>
-          <Link className="button-primary" to="/me/library">Ver mi biblioteca</Link>
+          <LibrarySummary total={library.length} completed={completedCount} favorites={favoriteCount} />
+          <Button asChild><Link to="/me/library">Ver mi biblioteca</Link></Button>
         </section>
       )}
     </main>

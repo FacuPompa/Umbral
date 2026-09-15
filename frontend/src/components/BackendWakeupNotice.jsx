@@ -1,20 +1,21 @@
 import LoadingIndicator from './LoadingIndicator';
+import { Button } from './ui/button';
 
 export default function BackendWakeupNotice({ onRetry, retrying = false }) {
   return (
-    <div className="backend-wakeup-notice" aria-live="polite">
+    <div className="grid max-w-[420px] justify-items-start gap-4" aria-live="polite">
       <LoadingIndicator label="Iniciando servidor" />
-      <div>
-        <h2>Iniciando servidor…</h2>
-        <p>
+      <div className="grid gap-3">
+        <h2 className="text-2xl leading-[30px] font-semibold tracking-normal">Iniciando servidor…</h2>
+        <p className="text-base leading-6 text-muted-foreground">
           El servidor gratuito puede tardar unos segundos en despertar. Esto suele pasar
           después de un período de inactividad.
         </p>
       </div>
       {onRetry && (
-        <button className="button-secondary" type="button" onClick={onRetry} disabled={retrying}>
+        <Button variant="outline" type="button" onClick={onRetry} disabled={retrying}>
           {retrying ? 'Reintentando…' : 'Reintentar'}
-        </button>
+        </Button>
       )}
     </div>
   );

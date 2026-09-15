@@ -21,10 +21,12 @@ palacios.
 
 - Landing pública que explica la idea de Umbral y carga el catálogo real.
 - Tema claro/oscuro que recuerda la elección en el navegador.
+- Navegación con menú de cuenta en escritorio y panel lateral accesible en
+  móvil; incluye búsqueda, perfil, biblioteca y opciones según el rol.
 - Registro e inicio de sesión con sesiones HTTP seguras, contraseñas hasheadas
   con BCrypt y protección CSRF.
-- El detalle de cada juego y todas las acciones personales requieren una sesión;
-  el catálogo y los checkpoints siguen siendo públicos.
+- El catálogo y la ficha del juego se pueden explorar sin sesión. Guardar
+  avance, publicar y leer las conversaciones seguras requieren autenticación.
 - Roles iniciales `MEMBER` y `MODERATOR`. Las cuentas nuevas nacen como
   `MEMBER`; el rol nunca viene desde el formulario.
 - Búsqueda de juegos desde RAWG para sugerir una edición concreta. La clave de
@@ -65,7 +67,8 @@ palacios.
 | --- | --- |
 | Backend | Java 26, Spring Boot, Spring Security, Gradle, Spring Data JPA, Flyway |
 | Base de datos | PostgreSQL 17 + Docker Compose |
-| Frontend | React, React Router, Vite, JavaScript |
+| Frontend | React, React Router, Vite, JavaScript, Tailwind CSS 4 |
+| Interfaz | Archivo Variable, Lucide, Motion, primitivas Radix adaptadas de shadcn/ui, Embla |
 | Tests | JUnit, MockMvc, Testcontainers |
 | CI | GitHub Actions |
 
@@ -89,6 +92,7 @@ palacios.
 | `PATCH` | `/api/me/library/{gameId}/favorite` | Marca o quita un juego de favoritos. |
 | `DELETE` | `/api/me/library/{gameId}` | Quita un juego de la biblioteca, sin borrar su progreso. |
 | `GET` | `/api/users/{handle}` | Muestra un perfil público con métricas y favoritos. |
+| `GET` | `/api/search?query=...` | Busca hasta cinco juegos y cinco perfiles públicos por título o alias. |
 | `GET` | `/api/games/{gameId}/journal-entries` | Lista solo las entradas seguras para el progreso actual. |
 | `POST` | `/api/me/journal-entries` | Publica una entrada en un checkpoint ya alcanzado. |
 | `GET` | `/api/journal-entries/{entryId}/replies` | Lista las respuestas de una entrada visible. |
@@ -120,7 +124,7 @@ npm run dev
 
 El frontend queda en `http://localhost:5173` y el backend usa el puerto `8080`.
 La ruta `/` muestra la presentación y el catálogo; `/games/1` abre el detalle
-del juego de prueba después de iniciar sesión.
+del juego de prueba. Las acciones personales piden iniciar sesión.
 
 ### Variables locales
 
@@ -156,14 +160,27 @@ cd frontend
 npm run check
 ```
 
+### Migración visual
+
+El rediseño se implementa por pantallas: la paleta, el nav, los menús,
+acceso/sugerencias, landing, búsqueda, perfiles y biblioteca ya usan los
+componentes compartidos y Tailwind. Las confirmaciones de progreso y de
+quitar juegos usan diálogos accesibles, con foco de retorno y errores visibles.
+La ficha de juego también usa controles compartidos, con progreso junto al
+selector y conversaciones en una columna de lectura. El CSS de moderación permanece en
+`frontend/src/styles/legacy.css`, dentro de una capa de compatibilidad.
+Las animaciones de menús respetan la preferencia de movimiento reducido;
+el tema se recupera antes del primer render. La barrera anti-spoilers sigue
+resolviéndose exclusivamente en Spring.
+
 ## Lo próximo
 
 - Incorporar reseñas públicas y métricas sociales cuando puedan respetar la
   barrera anti-spoilers de cada lector.
-- Rediseñar la navegación: una barra flotante contenida, más aire entre
-  acciones y un menú de perfil con opciones de cuenta.
+- Continuar la migración visual de moderación. Retirar los estilos antiguos
+  a medida que cada pantalla quede migrada.
 - Crear una identidad propia para Umbral: logo y favicon.
 - Reemplazar las imágenes de muestra del carrusel por contenido real del
   catálogo, o quitar el carrusel si deja de aportar.
 - Evaluar respuestas anidadas, menciones y moderación para los hilos.
-- Incorporar búsqueda de juegos y usuarios, respetando la barrera anti-spoilers.
+- Agregar paginación y filtros por tipo a la búsqueda de juegos y usuarios cuando el catálogo lo requiera.

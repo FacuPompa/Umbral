@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import BackendWakeupNotice from '../../components/BackendWakeupNotice';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import HeroGameCarousel from '../games/HeroGameCarousel';
 import { fetchGames } from '../games/gameApi';
-import { getGameArtwork, getGameInitials } from '../games/gameArtwork';
+import CatalogSection from '../games/CatalogSection';
+import { Button } from '@/components/ui/button';
 
 const conversationTypes = [
   ['Dudas', 'Pedí una mano en el punto exacto donde estás jugando.'],
@@ -58,133 +58,61 @@ export default function HomePage() {
   }
 
   return (
-    <main className="landing-page" id="main-content">
-      <section className="landing-hero" aria-labelledby="hero-title">
-        <div className="landing-hero-copy">
-          <h1 id="hero-title">Hablá de juegos sin adelantarte la historia.</h1>
-          <p>
-            Umbral es una comunidad para preguntar, responder y compartir lo que te dejó
-            un juego. Marcá hasta dónde llegaste y el resto queda fuera de vista.
-          </p>
-          <div className="hero-actions">
-            <a className="button button-primary-link" href="#catalogo">Explorar juegos</a>
-            <a className="text-action" href="#como-funciona">Cómo funciona</a>
+    <main id="main-content">
+      <section className="grid items-center gap-8 py-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-12 lg:py-16" aria-labelledby="hero-title">
+        <div className="grid justify-items-start gap-6">
+          <h1 id="hero-title" className="max-w-[620px] text-4xl leading-10 font-[650] tracking-[-0.025em] md:text-[52px] md:leading-[56px]">Preguntá, compartí y seguí jugando sin adelantarte la historia.</h1>
+          <p className="max-w-[560px] text-lg leading-7 text-muted-foreground">Marcá hasta dónde llegaste. Umbral te muestra las conversaciones de ese tramo y de los anteriores, para que puedas pedir ayuda sin conocer lo que viene después.</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button asChild><a href="#catalogo">Explorar juegos</a></Button>
+            <Button asChild variant="ghost"><a href="#como-funciona">Cómo funciona</a></Button>
           </div>
         </div>
-
-        <div className="landing-hero-carousel">
-          {loading && !isSlowToLoad && (
-            <div className="hero-carousel-placeholder"><LoadingIndicator label="Cargando catálogo" /></div>
-          )}
-          {(isSlowToLoad || error) && (
-            <div className="hero-carousel-placeholder hero-carousel-placeholder-wakeup">
-              <BackendWakeupNotice onRetry={retryCatalog} retrying={loading} />
-            </div>
-          )}
-          {!loading && !error && <HeroGameCarousel games={games} />}
+        <div className="h-[300px] min-w-0 overflow-hidden rounded-lg bg-muted sm:h-[380px] lg:h-[420px]">
+          {loading && !isSlowToLoad && <div className="grid size-full place-items-center"><LoadingIndicator label="Cargando catálogo" showLabel /></div>}
+          {(isSlowToLoad || error) && <div className="grid size-full place-items-center overflow-y-auto p-6"><BackendWakeupNotice onRetry={retryCatalog} retrying={loading} /></div>}
+          {!loading && !error && (games.length > 0 ? <HeroGameCarousel games={games} /> : <p className="grid size-full place-items-center p-6 text-base text-muted-foreground">El catálogo todavía no tiene juegos.</p>)}
         </div>
       </section>
 
-      <section className="landing-section" id="como-funciona" aria-labelledby="safe-title">
-        <header className="section-heading">
-          <h2 id="safe-title">Tu progreso decide qué aparece</h2>
-          <p>No dependemos solo de que alguien recuerde escribir “spoiler” en el título.</p>
+      <section className="grid gap-8 border-t border-border py-12 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] md:gap-12 md:py-16" id="como-funciona" aria-labelledby="safe-title">
+        <header className="grid content-start gap-4">
+          <h2 className="text-2xl leading-[30px] font-semibold tracking-normal" id="safe-title">Tu progreso decide qué aparece</h2>
+          <p className="max-w-[440px] text-base leading-6 text-muted-foreground">No dependemos solo de que alguien recuerde escribir “spoiler” en el título.</p>
         </header>
-        <ol className="safety-steps">
-          <li>
-            <span>01</span>
-            <div>
-              <h3>Elegís un juego</h3>
-              <p>Entrás al detalle y ves los tramos narrativos disponibles.</p>
-            </div>
-          </li>
-          <li>
-            <span>02</span>
-            <div>
-              <h3>Guardás tu avance</h3>
-              <p>Indicás el último checkpoint que alcanzaste en tu partida.</p>
-            </div>
-          </li>
-          <li>
-            <span>03</span>
-            <div>
-              <h3>Umbral filtra el resto</h3>
-              <p>El servidor entrega solamente publicaciones que ya son seguras para vos.</p>
-            </div>
-          </li>
-        </ol>
-      </section>
-
-      <section className="community-section" aria-labelledby="community-title">
-        <div className="community-intro">
-          <h2 id="community-title">Un foro, no una lista de puntajes</h2>
-          <p>
-            Las reseñas tienen lugar, pero el centro son las conversaciones: preguntar,
-            responder y pensar una historia con otras personas.
-          </p>
-        </div>
-        <ol className="conversation-list">
-          {conversationTypes.map(([title, description], index) => (
-            <li key={title}>
-              <span>{String(index + 1).padStart(2, '0')}</span>
-              <h3>{title}</h3>
-              <p>{description}</p>
+        <ol className="border-t border-border">
+          {[
+            ['Elegís un juego', 'Entrás al detalle y ves los tramos narrativos disponibles.'],
+            ['Guardás tu avance', 'Indicás el último checkpoint que alcanzaste en tu partida.'],
+            ['Umbral filtra el resto', 'El servidor entrega solamente publicaciones que ya son seguras para vos.'],
+          ].map(([title, description], index) => (
+            <li className="grid grid-cols-[24px_minmax(0,1fr)] gap-4 border-b border-border py-5" key={title}>
+              <span className="text-sm leading-6 text-muted-foreground">{index + 1}.</span>
+              <div className="grid gap-2"><h3 className="text-base leading-6 font-semibold">{title}</h3><p className="text-base leading-6 text-muted-foreground">{description}</p></div>
             </li>
           ))}
         </ol>
       </section>
 
-      <section className="catalog-section" id="catalogo" aria-labelledby="catalog-title">
-        <header className="section-heading section-heading-row">
-          <div>
-            <h2 id="catalog-title">Juegos en Umbral</h2>
-            <p>Abrí un juego para registrar tu progreso y entrar a su conversación.</p>
-          </div>
-          <span>
-            {(loading || error)
-              ? 'Actualizando catálogo'
-              : `${games.length} ${games.length === 1 ? 'juego disponible' : 'juegos disponibles'}`}
-          </span>
-        </header>
-
-        {loading && <div className="catalog-message"><LoadingIndicator label="Cargando juegos" /></div>}
-        {error && (
-          <div className="catalog-message catalog-message-error">
-            <p>No pudimos conectar con el catálogo todavía. Esperá unos segundos y reintentá.</p>
-            <button className="text-action" type="button" onClick={retryCatalog}>Reintentar catálogo</button>
-          </div>
-        )}
-        {!loading && !error && games.length === 0 && <p className="catalog-message">Todavía no hay juegos disponibles.</p>}
-        {!loading && !error && games.length > 0 && (
-          <ol className="catalog-list">
-            {games.map((game) => {
-              const artwork = game.coverImageUrl ?? getGameArtwork(game.title);
-
-              return (
-                <li key={game.id}>
-                  <article className="catalog-list-item">
-                    <Link className="catalog-list-artwork" to={`/games/${game.id}`} aria-label={`Abrir ${game.title}`}>
-                      {artwork ? <img src={artwork} alt={`Arte de ${game.title}`} /> : <span>{getGameInitials(game.title)}</span>}
-                    </Link>
-                    <div className="catalog-list-copy">
-                      <h3>{game.title}</h3>
-                      <p>{game.description}</p>
-                    </div>
-                    <Link className="text-action catalog-list-action" to={`/games/${game.id}`}>Ver juego</Link>
-                  </article>
-                </li>
-              );
-            })}
-          </ol>
-        )}
+      <section className="grid gap-8 border-t border-border py-12 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] md:gap-12 md:py-16" aria-labelledby="community-title">
+        <div className="grid content-start gap-4">
+          <h2 className="text-2xl leading-[30px] font-semibold tracking-normal" id="community-title">Un foro para compartir lo que jugás</h2>
+          <p className="max-w-[440px] text-base leading-6 text-muted-foreground">Las reseñas tienen lugar, pero el centro son las conversaciones: preguntar, responder y pensar una historia con otras personas.</p>
+        </div>
+        <ul className="border-t border-border">
+          {conversationTypes.map(([title, description]) => (
+            <li className="grid gap-2 border-b border-border py-5 sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-4" key={title}>
+              <h3 className="text-base leading-6 font-semibold">{title}</h3>
+              <p className="text-base leading-6 text-muted-foreground">{description}</p>
+            </li>
+          ))}
+        </ul>
       </section>
 
-      <footer className="site-footer">
-        <strong>Umbral</strong>
-        <p>
-          Conversaciones sobre juegos narrativos, sin adelantarte nada. Datos e imágenes de{' '}
-          <a href="https://rawg.io/" rel="noreferrer" target="_blank">RAWG</a>.
-        </p>
+      <CatalogSection games={games} loading={loading} error={error} onRetry={retryCatalog} />
+      <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-border py-8 text-sm">
+        <strong className="font-semibold">Umbral</strong>
+        <p className="text-sm leading-5 text-muted-foreground">Conversaciones sin adelantarte la historia. Datos e imágenes de <a className="underline underline-offset-4" href="https://rawg.io/" rel="noreferrer" target="_blank">RAWG</a>.</p>
       </footer>
     </main>
   );
