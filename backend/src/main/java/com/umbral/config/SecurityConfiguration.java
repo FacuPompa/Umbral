@@ -46,7 +46,7 @@ public class SecurityConfiguration {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/csrf", "/api/auth/register", "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/games", "/api/games/*/checkpoints", "/api/users/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/games", "/api/games/*/checkpoints", "/api/users/*", "/api/search").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

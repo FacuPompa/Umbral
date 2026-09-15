@@ -6,6 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Umbral es una comunidad para conversar sobre juegos sin adelantarte la historia." />
     <title>Umbral — Hablá de juegos sin spoilers</title>
+    <script>
+      (() => {
+        let saved;
+        try { saved = localStorage.getItem('umbral-theme'); } catch { /* Almacenamiento no disponible. */ }
+        document.documentElement.dataset.theme = saved === 'light' || saved === 'dark'
+          ? saved
+          : matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import { useAuth } from '../auth/useAuth';
@@ -8,16 +8,16 @@ import {
   updateCurrentUserLibraryGameFavorite,
   updateCurrentUserLibraryGameStatus,
 } from '../games/gameApi';
-import { getGameArtwork, getGameInitials } from '../games/gameArtwork';
+import { Star, Trash2 } from 'lucide-react';
+import { LazyMotion, m, useReducedMotion } from 'motion/react';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import PageHeading from '@/components/PageHeading';
+import GameRow from '@/components/GameRow';
+import StatusMessage from '@/components/StatusMessage';
+import { Button } from '@/components/ui/button';
 import { libraryStatusOptions } from './libraryLabels';
 
-function FavoriteIcon({ favorite }) {
-  return (
-    <svg aria-hidden="true" fill={favorite ? 'currentColor' : 'none'} height="17" viewBox="0 0 24 24" width="17">
-      <path d="m12 3.8 2.5 5.1 5.6.8-4 3.9.9 5.5-5-2.7-5 2.7.9-5.5-4-3.9 5.6-.8L12 3.8Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.7" />
-    </svg>
-  );
-}
+const loadLayoutFeatures = () => import('@/lib/motionLayoutFeatures').then((module) => module.default);
 
 const filters = [
   { value: 'ALL', label: 'Todos' },
@@ -27,6 +27,10 @@ const filters = [
 export default function LibraryPage() {
   const { user, loading: loadingUser } = useAuth();
   const location = useLocation();
+  const mainRef = useRef(null);
+  const reduced = useReducedMotion();
+  const [pendingRemoval, setPendingRemoval] = useState(null);
+  const [removeError, setRemoveError] = useState(null);
   const [library, setLibrary] = useState([]);
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -69,6 +73,7 @@ export default function LibraryPage() {
   }
 
   async function changeStatus(gameId, status) {
+    if (workingGameId !== null) return;
     setWorkingGameId(gameId);
     setError(null);
     try {
@@ -82,6 +87,7 @@ export default function LibraryPage() {
   }
 
   async function changeFavorite(game) {
+    if (workingGameId !== null) return;
     setWorkingGameId(game.gameId);
     setError(null);
     try {
@@ -94,107 +100,90 @@ export default function LibraryPage() {
     }
   }
 
-  async function removeGame(game) {
-    if (!window.confirm(`¿Quitar ${game.gameTitle} de tu biblioteca? Tu progreso no se va a borrar.`)) return;
-
+  async function removeGame() {
+    if (!pendingRemoval || workingGameId !== null) return;
+    const game = pendingRemoval;
     setWorkingGameId(game.gameId);
-    setError(null);
+    setRemoveError(null);
     try {
       await removeGameFromCurrentUserLibrary(game.gameId);
       setLibrary((currentLibrary) => currentLibrary.filter((item) => item.gameId !== game.gameId));
+      setPendingRemoval(null);
     } catch (requestError) {
-      setError(requestError.message);
+      setRemoveError(requestError.message);
     } finally {
       setWorkingGameId(null);
     }
   }
 
   return (
-    <main className="page-main library-page" id="main-content">
-      <header className="page-heading library-heading">
-        <div>
-          <h1>Mi biblioteca</h1>
-          <p>Guardá los juegos que querés jugar y mantené tu colección personal al día.</p>
-        </div>
-        <Link className="text-action" to="/#catalogo">Explorar catálogo</Link>
-      </header>
+    <main className="grid w-full max-w-[980px] gap-8 py-8 md:gap-10 md:py-12" id="main-content" ref={mainRef} tabIndex={-1}>
+      <PageHeading title="Mi biblioteca" description="Guardá los juegos que querés jugar y mantené tu colección personal al día.">
+        <Button asChild variant="outline"><Link to="/#catalogo">Explorar catálogo</Link></Button>
+      </PageHeading>
 
-      <div className="library-filters" aria-label="Filtros de biblioteca">
-        <div className="library-filter-list" role="group" aria-label="Filtrar por estado">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por estado">
           {filters.map((filter) => (
-            <button
-              aria-pressed={activeFilter === filter.value}
-              className={activeFilter === filter.value ? 'library-filter is-active' : 'library-filter'}
-              key={filter.value}
-              onClick={() => setActiveFilter(filter.value)}
-              type="button"
-            >
-              {filter.label}
-            </button>
+            <Button aria-pressed={activeFilter === filter.value}
+              variant={activeFilter === filter.value ? 'primary' : 'ghost'} key={filter.value}
+              onClick={() => setActiveFilter(filter.value)} type="button">{filter.label}</Button>
           ))}
         </div>
-        <label className="favorites-filter">
-          <input checked={favoritesOnly} onChange={(event) => setFavoritesOnly(event.target.checked)} type="checkbox" />
+        <label className="inline-flex min-h-11 items-center gap-3 text-sm">
+          <input className="size-4 accent-primary" checked={favoritesOnly} onChange={(event) => setFavoritesOnly(event.target.checked)} type="checkbox" />
           Solo favoritos
         </label>
       </div>
 
-      {loading && <div className="inline-loader"><LoadingIndicator label="Cargando biblioteca" /></div>}
-      {error && <p className="status-message status-message-error" role="alert">{error}</p>}
+      {loading && <LoadingIndicator label="Cargando biblioteca" showLabel />}
+      {error && <StatusMessage kind="error">{error}</StatusMessage>}
       {!loading && !error && library.length === 0 && (
-        <section className="library-empty-state">
-          <h2>Tu biblioteca está vacía</h2>
-          <p>Cuando marques un progreso, el juego aparecerá acá. También vas a poder organizarlo por estado y favoritos.</p>
-          <Link className="button-primary" to="/#catalogo">Explorar juegos</Link>
+        <section className="grid justify-items-start gap-4 py-4">
+          <h2 className="text-2xl leading-[30px] font-semibold tracking-normal">Tu biblioteca está vacía</h2>
+          <p className="max-w-[600px] text-base leading-6 text-muted-foreground">Agregá un juego desde su ficha o guardá tu primer progreso para verlo acá.</p>
+          <Button asChild><Link to="/#catalogo">Explorar juegos</Link></Button>
         </section>
       )}
-      {!loading && !error && library.length > 0 && visibleGames.length === 0 && (
-        <p className="status-message">No hay juegos que coincidan con este filtro.</p>
-      )}
-      {!loading && !error && visibleGames.length > 0 && (
-        <ol className="library-list">
-          {visibleGames.map((game) => {
-            const artwork = game.coverImageUrl ?? getGameArtwork(game.gameTitle);
-            const isWorking = workingGameId === game.gameId;
-
-            return (
-              <li key={game.gameId}>
-                <article className="library-item">
-                  <Link aria-label={`Abrir ${game.gameTitle}`} className="library-artwork" to={`/games/${game.gameId}`}>
-                    {artwork ? <img alt={`Arte de ${game.gameTitle}`} src={artwork} /> : <span aria-hidden="true">{getGameInitials(game.gameTitle)}</span>}
-                  </Link>
-                  <div className="library-copy">
-                    <div className="library-title-row">
-                      <h2>{game.gameTitle}</h2>
-                      {game.favorite && <span className="library-favorite-label">Favorito</span>}
-                    </div>
-                    <p>{game.checkpointLabel ? `Avance: ${game.checkpointLabel}` : 'Todavía no marcaste un checkpoint.'}</p>
-                  </div>
-                  <div className="library-controls">
-                    <label>
-                      Estado
-                      <select
-                        disabled={isWorking}
-                        onChange={(event) => changeStatus(game.gameId, event.target.value)}
-                        value={game.status}
-                      >
+      {!loading && library.length > 0 && visibleGames.length === 0 && <StatusMessage>No hay juegos que coincidan con este filtro.</StatusMessage>}
+      {!loading && visibleGames.length > 0 && (
+        <LazyMotion features={loadLayoutFeatures}>
+          <ol className="border-t border-border">
+            {visibleGames.map((game) => (
+              <m.li key={game.gameId} initial={false} layout={reduced ? false : 'position'} transition={{ layout: { duration: 0.16, ease: [0.2, 0, 0, 1] } }}>
+                <GameRow gameId={game.gameId} title={game.gameTitle} coverImageUrl={game.coverImageUrl}
+                  description={game.checkpointLabel ? `Avance: ${game.checkpointLabel}` : 'Todavía no marcaste un checkpoint.'}>
+                  <div className="grid gap-3 sm:w-60">
+                    <label className="grid gap-2 text-sm font-medium">
+                      <span id={`library-status-label-${game.gameId}`}>Estado</span>
+                      <select className="min-h-11 w-full rounded-md border border-input bg-popover px-3 text-base font-normal text-foreground"
+                        aria-labelledby={`library-status-label-${game.gameId}`}
+                        disabled={workingGameId !== null} onChange={(event) => changeStatus(game.gameId, event.target.value)} value={game.status}>
                         {libraryStatusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
                       </select>
                     </label>
-                    <div className="library-actions">
-                      <button className="library-action library-favorite-action" disabled={isWorking} onClick={() => changeFavorite(game)} type="button">
-                        <FavoriteIcon favorite={game.favorite} />
-                        <span>{game.favorite ? 'Quitar favorito' : 'Marcar favorito'}</span>
-                      </button>
-                      <button className="library-remove-button" disabled={isWorking} onClick={() => removeGame(game)} type="button">Quitar</button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button variant="ghost" className="px-2" aria-pressed={game.favorite} aria-label={`Favorito: ${game.gameTitle}`}
+                        disabled={workingGameId !== null} onClick={() => changeFavorite(game)} type="button">
+                        <Star aria-hidden="true" fill={game.favorite ? 'currentColor' : 'none'} className={game.favorite ? 'text-primary' : ''} />Favorito
+                      </Button>
+                      <Button variant="destructive" className="px-2" disabled={workingGameId !== null}
+                        onClick={() => { setRemoveError(null); setPendingRemoval(game); }} type="button" aria-label={`Quitar ${game.gameTitle}`}>
+                        <Trash2 aria-hidden="true" />Quitar
+                      </Button>
                     </div>
+                    {workingGameId === game.gameId && <LoadingIndicator label="Actualizando juego" showLabel />}
                   </div>
-                </article>
-              </li>
-            );
-          })}
-        </ol>
+                </GameRow>
+              </m.li>
+            ))}
+          </ol>
+        </LazyMotion>
       )}
+      <ConfirmDialog open={Boolean(pendingRemoval)} onOpenChange={(open) => { if (!open) setPendingRemoval(null); }}
+        title="¿Quitar este juego?" description={<>Vas a quitar <strong>{pendingRemoval?.gameTitle}</strong> de tu biblioteca. Se conservan tu progreso y tus publicaciones.</>}
+        confirmLabel="Quitar de mi biblioteca" pendingLabel="Quitando juego" destructive
+        busy={workingGameId !== null} error={removeError} onConfirm={removeGame} fallbackFocusRef={mainRef} />
     </main>
   );
 }
