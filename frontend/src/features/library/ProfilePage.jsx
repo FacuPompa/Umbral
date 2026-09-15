@@ -53,6 +53,8 @@ export default function ProfilePage() {
         </div>
       </header>
 
+      <Link className="text-action profile-public-link" to={`/users/${encodeURIComponent(user.handle)}`}>Ver perfil público</Link>
+
       {loading && <div className="inline-loader"><LoadingIndicator label="Cargando perfil" /></div>}
       {error && <p className="status-message status-message-error" role="alert">{error}</p>}
       {!loading && !error && (

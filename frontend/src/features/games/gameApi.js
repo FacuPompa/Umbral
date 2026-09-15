@@ -25,6 +25,10 @@ export function fetchCurrentUserLibrary() {
   return getJson('/api/me/library', 'No se pudo cargar tu biblioteca.');
 }
 
+export function fetchPublicProfile(handle) {
+  return getJson(`/api/users/${encodeURIComponent(handle)}`, 'No encontramos ese perfil.');
+}
+
 export function addGameToCurrentUserLibrary(gameId, status = 'WANT_TO_PLAY') {
   return sendJson('/api/me/library', 'POST', { gameId, status }, 'No se pudo agregar el juego a tu biblioteca.');
 }

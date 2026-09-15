@@ -8,6 +8,7 @@ import GameSuggestionPage from './features/games/GameSuggestionPage';
 import GameModerationPage from './features/games/GameModerationPage';
 import ProfilePage from './features/library/ProfilePage';
 import LibraryPage from './features/library/LibraryPage';
+import PublicProfilePage from './features/library/PublicProfilePage';
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="moderation/games" element={<GameModerationPage />} />
           <Route path="me" element={<ProfilePage />} />
           <Route path="me/library" element={<LibraryPage />} />
+          <Route path="users/:handle" element={<PublicProfilePage />} />
           <Route path="*" element={<Navigate replace to="/" />} />
         </Route>
       </Routes>
