@@ -39,6 +39,8 @@ palacios.
   recargar React.
 - Perfil personal en `/me` y biblioteca en `/me/library` para organizar juegos
   como `Quiero jugar`, `Jugando` o `Terminado` y marcarlos como favoritos.
+- Perfil público en `/users/{handle}`: comparte el alias, métricas generales y
+  juegos favoritos, sin exponer correo, rol, estados individuales ni progreso.
 - Al guardar progreso por primera vez, el juego entra automáticamente a la
   biblioteca como `Jugando`; quitarlo de la biblioteca no borra progreso ni
   publicaciones.
@@ -86,6 +88,7 @@ palacios.
 | `PATCH` | `/api/me/library/{gameId}/status` | Actualiza el estado de un juego guardado. |
 | `PATCH` | `/api/me/library/{gameId}/favorite` | Marca o quita un juego de favoritos. |
 | `DELETE` | `/api/me/library/{gameId}` | Quita un juego de la biblioteca, sin borrar su progreso. |
+| `GET` | `/api/users/{handle}` | Muestra un perfil público con métricas y favoritos. |
 | `GET` | `/api/games/{gameId}/journal-entries` | Lista solo las entradas seguras para el progreso actual. |
 | `POST` | `/api/me/journal-entries` | Publica una entrada en un checkpoint ya alcanzado. |
 | `GET` | `/api/journal-entries/{entryId}/replies` | Lista las respuestas de una entrada visible. |
@@ -155,8 +158,8 @@ npm run check
 
 ## Lo próximo
 
-- Diseñar perfiles públicos con reseñas escritas y métricas que tengan
-  significado real.
+- Incorporar reseñas públicas y métricas sociales cuando puedan respetar la
+  barrera anti-spoilers de cada lector.
 - Rediseñar la navegación: una barra flotante contenida, más aire entre
   acciones y un menú de perfil con opciones de cuenta.
 - Crear una identidad propia para Umbral: logo y favicon.
