@@ -65,7 +65,7 @@ export default function LibraryPage() {
   }), [activeFilter, favoritesOnly, library]);
 
   if (loadingUser) {
-    return <main className="page-state" id="main-content"><LoadingIndicator label="Recuperando sesión" /></main>;
+    return <main className="grid min-h-[65vh] place-items-center text-center text-muted-foreground" id="main-content"><LoadingIndicator label="Recuperando sesión" /></main>;
   }
 
   if (!user) {

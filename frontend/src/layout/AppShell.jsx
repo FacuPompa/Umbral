@@ -187,9 +187,7 @@ export default function AppShell() {
         </div>
       </header>
       {logoutError && !mobileOpen && !profileOpen && <div className="pt-4"><LogoutError message={logoutError} /></div>}
-      <div className="legacy-content">
-        <Outlet />
-      </div>
+      <Outlet />
     </div>
   );
 }

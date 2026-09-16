@@ -1,7 +1,6 @@
-@layer theme, base, legacy, components, utilities;
+@layer theme, base, components, utilities;
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/preflight.css" layer(base);
-@import "./styles/legacy.css" layer(legacy);
 @import "tailwindcss/utilities.css" layer(utilities);
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
@@ -35,7 +34,6 @@
     --surface-muted: #2b2d28;
     --text: #eeeae0;
     --text-secondary: #b8b5aa;
-    --text-muted: #b8b5aa;
     --border: #3d4037;
     --border-strong: #777b6d;
     --brand: #e69b80;
@@ -47,10 +45,6 @@
     --paper: #f4f1e9;
     --ink: #161715;
     --overlay-shadow: rgb(0 0 0 / 0.2);
-    /* El CSS antiguo usa accent como marca; las utilidades Tailwind
-       bg-accent / text-accent-foreground representan selección suave. */
-    --accent: var(--brand);
-    --accent-foreground: var(--brand-foreground);
     font-family: var(--font-sans);
     font-synthesis: none;
     text-rendering: optimizeLegibility;
@@ -64,7 +58,6 @@
     --surface-muted: #e8e3d8;
     --text: #23251f;
     --text-secondary: #626357;
-    --text-muted: #626357;
     --border: #d3cfc2;
     --border-strong: #858777;
     --brand: #a44530;
@@ -82,5 +75,13 @@
   a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
     outline: 2px solid var(--focus);
     outline-offset: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }

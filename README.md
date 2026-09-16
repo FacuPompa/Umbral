@@ -156,3 +156,4 @@ Para verificar el frontend antes de abrir una Pull Request:
 cd frontend
 npm run check
 ```
+
