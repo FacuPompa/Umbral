@@ -13,9 +13,6 @@ Cada juego se divide en checkpoints de historia. Antes de leer o publicar una
 entrada, cada persona indica hasta dónde llegó. El backend usa ese avance para
 devolver solamente conversaciones que ya son seguras para esa persona.
 
-El catálogo parte de **Persona 5 Royal**. En vez de usar un
-porcentaje, el progreso se guarda por tramos de la historia, como los
-palacios.
 
 ## Qué tiene hasta ahora
 
@@ -160,27 +157,3 @@ cd frontend
 npm run check
 ```
 
-### Migración visual
-
-El rediseño se implementa por pantallas: la paleta, el nav, los menús,
-acceso/sugerencias, landing, búsqueda, perfiles y biblioteca ya usan los
-componentes compartidos y Tailwind. Las confirmaciones de progreso y de
-quitar juegos usan diálogos accesibles, con foco de retorno y errores visibles.
-La ficha de juego también usa controles compartidos, con progreso junto al
-selector y conversaciones en una columna de lectura. El CSS de moderación permanece en
-`frontend/src/styles/legacy.css`, dentro de una capa de compatibilidad.
-Las animaciones de menús respetan la preferencia de movimiento reducido;
-el tema se recupera antes del primer render. La barrera anti-spoilers sigue
-resolviéndose exclusivamente en Spring.
-
-## Lo próximo
-
-- Incorporar reseñas públicas y métricas sociales cuando puedan respetar la
-  barrera anti-spoilers de cada lector.
-- Continuar la migración visual de moderación. Retirar los estilos antiguos
-  a medida que cada pantalla quede migrada.
-- Crear una identidad propia para Umbral: logo y favicon.
-- Reemplazar las imágenes de muestra del carrusel por contenido real del
-  catálogo, o quitar el carrusel si deja de aportar.
-- Evaluar respuestas anidadas, menciones y moderación para los hilos.
-- Agregar paginación y filtros por tipo a la búsqueda de juegos y usuarios cuando el catálogo lo requiera.

@@ -10,7 +10,11 @@ import {
   rejectCheckpointSuggestion,
   rejectGameSuggestion,
 } from './gameApi';
-import { getGameInitials } from './gameArtwork';
+import GameArtwork from '../../components/GameArtwork';
+import PageHeading from '../../components/PageHeading';
+import StatusMessage from '../../components/StatusMessage';
+import { Button } from '../../components/ui/button';
+import { Field, Textarea } from '../../components/ui/field';
 
 export default function GameModerationPage() {
   const { user, loading: loadingUser } = useAuth();
@@ -18,8 +22,8 @@ export default function GameModerationPage() {
   const [checkpointSuggestions, setCheckpointSuggestions] = useState([]);
   const [descriptions, setDescriptions] = useState({});
   const [loading, setLoading] = useState(true);
-  const [workingId, setWorkingId] = useState(null);
-  const [workingCheckpointId, setWorkingCheckpointId] = useState(null);
+  const [reviews, setReviews] = useState({});
+  const [reloadKey, setReloadKey] = useState(0);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -50,10 +54,10 @@ export default function GameModerationPage() {
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [user, reloadKey]);
 
   if (loadingUser) {
-    return <main className="page-state" id="main-content"><LoadingIndicator label="Recuperando sesión" /></main>;
+    return <main className="grid min-h-[65vh] place-items-center text-center text-muted-foreground" id="main-content"><LoadingIndicator label="Recuperando sesión" /></main>;
   }
 
   if (!user || user.role !== 'MODERATOR') {
@@ -61,8 +65,8 @@ export default function GameModerationPage() {
   }
 
   async function reviewSuggestion(suggestion, action) {
-    setWorkingId(suggestion.id);
-    setError(null);
+    const key = `game-${suggestion.id}`;
+    setReviews((current) => ({ ...current, [key]: { action } }));
 
     try {
       if (action === 'approve') {
@@ -72,15 +76,13 @@ export default function GameModerationPage() {
       }
       setSuggestions((currentSuggestions) => currentSuggestions.filter((item) => item.id !== suggestion.id));
     } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setWorkingId(null);
+      setReviews((current) => ({ ...current, [key]: { error: requestError.message } }));
     }
   }
 
   async function reviewCheckpointSuggestion(suggestion, action) {
-    setWorkingCheckpointId(suggestion.id);
-    setError(null);
+    const key = `checkpoint-${suggestion.id}`;
+    setReviews((current) => ({ ...current, [key]: { action } }));
 
     try {
       if (action === 'approve') {
@@ -90,128 +92,94 @@ export default function GameModerationPage() {
       }
       setCheckpointSuggestions((currentSuggestions) => currentSuggestions.filter((item) => item.id !== suggestion.id));
     } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setWorkingCheckpointId(null);
+      setReviews((current) => ({ ...current, [key]: { error: requestError.message } }));
     }
   }
 
   return (
-    <main className="page-main moderation-page" id="main-content">
-      <header className="page-heading">
-        <h1>Moderación</h1>
-        <p>
-          Los juegos y los checkpoints se revisan antes de entrar al catálogo y de
-          habilitar conversaciones.
-        </p>
-      </header>
-
-      {loading && <div className="inline-loader"><LoadingIndicator label="Cargando sugerencias pendientes" /></div>}
-      {error && <p className="status-message status-message-error" role="alert">{error}</p>}
-      {!loading && !error && suggestions.length === 0 && checkpointSuggestions.length === 0 && (
-        <p className="status-message">No hay propuestas pendientes de revisión.</p>
+    <main className="mx-auto grid w-full max-w-[900px] gap-8 py-8 md:gap-12 md:py-12" id="main-content">
+      <PageHeading title="Moderación" description="Revisá los juegos y checkpoints propuestos antes de incorporarlos al catálogo y habilitar conversaciones." />
+      {loading && <LoadingIndicator label="Cargando sugerencias pendientes" />}
+      {error && (
+        <div className="grid justify-items-start gap-3">
+          <StatusMessage kind="error">{error}</StatusMessage>
+          <Button variant="outline" onClick={() => setReloadKey((key) => key + 1)}>Reintentar carga</Button>
+        </div>
       )}
-      {!loading && suggestions.length > 0 && (
-        <section className="suggestion-results-wrap" aria-labelledby="game-suggestions-title">
-          <h2 className="moderation-section-title" id="game-suggestions-title">Juegos pendientes</h2>
-          <ol className="moderation-list">
-            {suggestions.map((suggestion) => {
-              const isWorking = workingId === suggestion.id;
-              const description = descriptions[suggestion.id] ?? '';
-
-              return (
-                <li key={suggestion.id}>
-                  <article className="moderation-item">
-                    <div className="suggestion-result-artwork">
-                      {suggestion.coverImageUrl ? (
-                        <img alt={`Portada de ${suggestion.title}`} src={suggestion.coverImageUrl} />
-                      ) : (
-                        <span aria-hidden="true">{getGameInitials(suggestion.title)}</span>
-                      )}
-                    </div>
-                    <div className="moderation-copy">
-                      <h2>{suggestion.title}</h2>
-                      <p>Sugerido por @{suggestion.suggestedByHandle}</p>
-                      <label>
-                        Descripción segura para el catálogo
-                        <textarea
-                          maxLength="255"
-                          onChange={(event) => setDescriptions((current) => ({
-                            ...current,
-                            [suggestion.id]: event.target.value,
-                          }))}
-                          placeholder="Presentá el juego sin adelantar elementos de la historia."
-                          value={description}
-                        />
-                      </label>
-                      <div className="moderation-actions">
-                        <button
-                          className="button-primary"
-                          disabled={isWorking || !description.trim()}
-                          onClick={() => reviewSuggestion(suggestion, 'approve')}
-                          type="button"
-                        >
-                          {isWorking ? <LoadingIndicator label="Revisando sugerencia" /> : 'Aprobar y publicar'}
-                        </button>
-                        <button
-                          className="button-secondary"
-                          disabled={isWorking}
-                          onClick={() => reviewSuggestion(suggestion, 'reject')}
-                          type="button"
-                        >
-                          Rechazar
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                </li>
-              );
-            })}
-          </ol>
-          <p className="external-attribution">Datos e imágenes de <a href="https://rawg.io/" rel="noreferrer" target="_blank">RAWG</a>.</p>
-        </section>
-      )}
-      {!loading && checkpointSuggestions.length > 0 && (
-        <section className="suggestion-results-wrap" aria-labelledby="checkpoint-suggestions-title">
-          <h2 className="moderation-section-title" id="checkpoint-suggestions-title">Checkpoints pendientes</h2>
-          <ol className="moderation-list">
-            {checkpointSuggestions.map((suggestion) => {
-              const isWorking = workingCheckpointId === suggestion.id;
-
-              return (
-                <li key={suggestion.id}>
-                  <article className="moderation-item">
-                    <div className="suggestion-result-artwork checkpoint-suggestion-marker" aria-hidden="true">
-                      {String(suggestion.position).padStart(2, '0')}
-                    </div>
-                    <div className="moderation-copy">
-                      <h2>{suggestion.label}</h2>
-                      <p>{suggestion.gameTitle} · posición {suggestion.position} · sugerido por @{suggestion.suggestedByHandle}</p>
-                      <div className="moderation-actions">
-                        <button
-                          className="button-primary"
-                          disabled={isWorking}
-                          onClick={() => reviewCheckpointSuggestion(suggestion, 'approve')}
-                          type="button"
-                        >
-                          {isWorking ? <LoadingIndicator label="Revisando checkpoint" /> : 'Aprobar checkpoint'}
-                        </button>
-                        <button
-                          className="button-secondary"
-                          disabled={isWorking}
-                          onClick={() => reviewCheckpointSuggestion(suggestion, 'reject')}
-                          type="button"
-                        >
-                          Rechazar
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                </li>
-              );
-            })}
-          </ol>
-        </section>
+      {!loading && !error && (
+        <>
+          <section aria-labelledby="game-suggestions-title" className="grid gap-4">
+            <h2 className="text-2xl font-semibold leading-[30px]" id="game-suggestions-title">Juegos pendientes</h2>
+            {suggestions.length === 0 ? <StatusMessage>No hay juegos pendientes de revisión.</StatusMessage> : (
+              <ol className="divide-y divide-border border-y border-border">
+                {suggestions.map((suggestion) => {
+                  const review = reviews[`game-${suggestion.id}`] ?? {};
+                  const isWorking = Boolean(review.action);
+                  const description = descriptions[suggestion.id] ?? '';
+                  const fieldId = `description-${suggestion.id}`;
+                  return (
+                    <li key={suggestion.id} className="py-6">
+                      <article aria-labelledby={`game-title-${suggestion.id}`} className="grid min-w-0 gap-4 sm:grid-cols-[88px_minmax(0,1fr)] sm:gap-6">
+                        <GameArtwork src={suggestion.coverImageUrl} title={suggestion.title} className="h-24 w-16 sm:h-28 sm:w-[88px]" />
+                        <div className="grid min-w-0 gap-4">
+                          <div className="grid gap-1">
+                            <h3 id={`game-title-${suggestion.id}`} className="break-words text-xl font-semibold leading-7">{suggestion.title}</h3>
+                            <p className="break-words text-sm leading-5 text-muted-foreground">Sugerido por @{suggestion.suggestedByHandle}</p>
+                          </div>
+                          <Field id={fieldId} label="Descripción segura para el catálogo" hint="Presentá el juego sin adelantar la historia. Hasta 255 caracteres.">
+                            <Textarea id={fieldId} aria-describedby={`${fieldId}-hint`} maxLength={255} disabled={isWorking}
+                              value={description} onChange={(event) => setDescriptions((current) => ({ ...current, [suggestion.id]: event.target.value }))} />
+                          </Field>
+                          {review.error && <StatusMessage kind="error">{review.error}</StatusMessage>}
+                          <div className="flex flex-wrap gap-3">
+                            <Button disabled={isWorking || !description.trim()} onClick={() => reviewSuggestion(suggestion, 'approve')}>
+                              {review.action === 'approve' ? <LoadingIndicator label="Aprobando juego" /> : 'Aprobar y publicar'}
+                            </Button>
+                            <Button variant="outline" disabled={isWorking} onClick={() => reviewSuggestion(suggestion, 'reject')}>
+                              {review.action === 'reject' ? <LoadingIndicator label="Rechazando juego" /> : 'Rechazar'}
+                            </Button>
+                          </div>
+                        </div>
+                      </article>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+            {suggestions.length > 0 && <p className="text-sm leading-5 text-muted-foreground">Datos e imágenes de <a className="underline underline-offset-4" href="https://rawg.io/" rel="noreferrer" target="_blank">RAWG</a>.</p>}
+          </section>
+          <section aria-labelledby="checkpoint-suggestions-title" className="grid gap-4">
+            <h2 className="text-2xl font-semibold leading-[30px]" id="checkpoint-suggestions-title">Checkpoints pendientes</h2>
+            {checkpointSuggestions.length === 0 ? <StatusMessage>No hay checkpoints pendientes de revisión.</StatusMessage> : (
+              <ol className="divide-y divide-border border-y border-border">
+                {checkpointSuggestions.map((suggestion) => {
+                  const review = reviews[`checkpoint-${suggestion.id}`] ?? {};
+                  const isWorking = Boolean(review.action);
+                  return (
+                    <li key={suggestion.id} className="py-6">
+                      <article aria-labelledby={`checkpoint-title-${suggestion.id}`} className="grid min-w-0 gap-4">
+                        <div className="grid gap-1">
+                          <h3 id={`checkpoint-title-${suggestion.id}`} className="break-words text-xl font-semibold leading-7">{suggestion.label}</h3>
+                          <p className="break-words text-base leading-6">{suggestion.gameTitle} · posición {suggestion.position}</p>
+                          <p className="break-words text-sm leading-5 text-muted-foreground">Sugerido por @{suggestion.suggestedByHandle}</p>
+                        </div>
+                        {review.error && <StatusMessage kind="error">{review.error}</StatusMessage>}
+                        <div className="flex flex-wrap gap-3">
+                          <Button disabled={isWorking} onClick={() => reviewCheckpointSuggestion(suggestion, 'approve')}>
+                            {review.action === 'approve' ? <LoadingIndicator label="Aprobando checkpoint" /> : 'Aprobar checkpoint'}
+                          </Button>
+                          <Button variant="outline" disabled={isWorking} onClick={() => reviewCheckpointSuggestion(suggestion, 'reject')}>
+                            {review.action === 'reject' ? <LoadingIndicator label="Rechazando checkpoint" /> : 'Rechazar'}
+                          </Button>
+                        </div>
+                      </article>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </section>
+        </>
       )}
     </main>
   );
