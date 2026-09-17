@@ -85,9 +85,9 @@ export default function AppShell() {
   const navLinkClass = 'inline-flex min-h-11 items-center gap-2 rounded-md px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground aria-[current=page]:text-foreground';
 
   return (
-    <div className="mx-auto w-[calc(100%-32px)] max-w-[1180px] md:w-[calc(100%-48px)]">
+    <div>
       <a className="fixed -top-20 left-4 z-[60] rounded-md bg-primary px-4 py-3 font-medium text-primary-foreground focus:top-3" href="#main-content">Saltar al contenido</a>
-      <header className="flex min-h-[60px] items-center gap-2 border-b border-border md:min-h-20 md:gap-8">
+      <header className="page-container flex min-h-[60px] items-center gap-2 border-b border-border md:min-h-20 md:gap-8">
         <Link ref={brandRef} className="inline-flex min-h-11 shrink-0 items-center gap-2.5 rounded-md pr-2 text-xl font-semibold tracking-[-0.02em] md:text-2xl" to="/" aria-label="Umbral, inicio">
           <img alt="" src="/favicon.svg" className="size-6 md:size-7" />
           <span>Umbral</span>
@@ -186,8 +186,8 @@ export default function AppShell() {
           </Sheet>
         </div>
       </header>
-      {logoutError && !mobileOpen && !profileOpen && <div className="pt-4"><LogoutError message={logoutError} /></div>}
-      <Outlet />
+      {logoutError && !mobileOpen && !profileOpen && <div className="page-container pt-4"><LogoutError message={logoutError} /></div>}
+      {location.pathname === '/' ? <Outlet /> : <div className="page-container"><Outlet /></div>}
     </div>
   );
 }
