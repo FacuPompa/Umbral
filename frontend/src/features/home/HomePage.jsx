@@ -59,7 +59,7 @@ export default function HomePage() {
 
   return (
     <main id="main-content">
-      <section className="grid items-center gap-8 py-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-12 lg:py-16" aria-labelledby="hero-title">
+      <section className="page-container grid items-center gap-8 py-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-12 lg:py-16" aria-labelledby="hero-title">
         <div className="grid justify-items-start gap-6">
           <h1 id="hero-title" className="max-w-[620px] text-4xl leading-10 font-[650] tracking-[-0.025em] md:text-[52px] md:leading-[56px]">Preguntá, compartí y seguí jugando sin adelantarte la historia.</h1>
           <p className="max-w-[560px] text-lg leading-7 text-muted-foreground">Marcá hasta dónde llegaste. Umbral te muestra las conversaciones de ese tramo y de los anteriores, para que puedas pedir ayuda sin conocer lo que viene después.</p>
@@ -68,14 +68,15 @@ export default function HomePage() {
             <Button asChild variant="ghost"><a href="#como-funciona">Cómo funciona</a></Button>
           </div>
         </div>
-        <div className="h-[300px] min-w-0 overflow-hidden rounded-lg bg-muted sm:h-[380px] lg:h-[420px]">
-          {loading && !isSlowToLoad && <div className="grid size-full place-items-center"><LoadingIndicator label="Cargando catálogo" showLabel /></div>}
-          {(isSlowToLoad || error) && <div className="grid size-full place-items-center overflow-y-auto p-6"><BackendWakeupNotice onRetry={retryCatalog} retrying={loading} /></div>}
-          {!loading && !error && (games.length > 0 ? <HeroGameCarousel games={games} /> : <p className="grid size-full place-items-center p-6 text-base text-muted-foreground">El catálogo todavía no tiene juegos.</p>)}
+        <div className="min-w-0 overflow-hidden rounded-lg bg-muted">
+          {loading && !isSlowToLoad && <div className="grid min-h-[400px] place-items-center"><LoadingIndicator label="Cargando catálogo" showLabel /></div>}
+          {(isSlowToLoad || error) && <div className="grid min-h-[400px] place-items-center p-6"><BackendWakeupNotice onRetry={retryCatalog} retrying={loading} /></div>}
+          {!loading && !error && (games.length > 0 ? <HeroGameCarousel games={games} /> : <p className="grid min-h-[400px] place-items-center p-6 text-base text-muted-foreground">El catálogo todavía no tiene juegos.</p>)}
         </div>
       </section>
 
-      <section className="grid gap-8 border-t border-border py-12 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] md:gap-12 md:py-16" id="como-funciona" aria-labelledby="safe-title">
+      <section className="bg-surface-subtle py-12 md:py-16" id="como-funciona" aria-labelledby="safe-title">
+        <div className="page-container grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] md:gap-12">
         <header className="grid content-start gap-4">
           <h2 className="text-2xl leading-[30px] font-semibold tracking-normal" id="safe-title">Tu progreso decide qué aparece</h2>
           <p className="max-w-[440px] text-base leading-6 text-muted-foreground">No dependemos solo de que alguien recuerde escribir “spoiler” en el título.</p>
@@ -92,9 +93,10 @@ export default function HomePage() {
             </li>
           ))}
         </ol>
+        </div>
       </section>
 
-      <section className="grid gap-8 border-t border-border py-12 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] md:gap-12 md:py-16" aria-labelledby="community-title">
+      <section className="page-container grid gap-8 py-12 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] md:gap-12 md:py-16" aria-labelledby="community-title">
         <div className="grid content-start gap-4">
           <h2 className="text-2xl leading-[30px] font-semibold tracking-normal" id="community-title">Un foro para compartir lo que jugás</h2>
           <p className="max-w-[440px] text-base leading-6 text-muted-foreground">Las reseñas tienen lugar, pero el centro son las conversaciones: preguntar, responder y pensar una historia con otras personas.</p>
@@ -109,10 +111,14 @@ export default function HomePage() {
         </ul>
       </section>
 
-      <CatalogSection games={games} loading={loading} error={error} onRetry={retryCatalog} />
-      <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-border py-8 text-sm">
+      <div className="page-container">
+        <CatalogSection games={games} loading={loading} error={error} onRetry={retryCatalog} />
+      </div>
+      <footer className="bg-surface-subtle py-8 text-sm">
+        <div className="page-container flex flex-wrap items-center justify-between gap-4">
         <strong className="font-semibold">Umbral</strong>
         <p className="text-sm leading-5 text-muted-foreground">Conversaciones sin adelantarte la historia. Datos e imágenes de <a className="underline underline-offset-4" href="https://rawg.io/" rel="noreferrer" target="_blank">RAWG</a>.</p>
+        </div>
       </footer>
     </main>
   );

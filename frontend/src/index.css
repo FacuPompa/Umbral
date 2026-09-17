@@ -16,6 +16,7 @@
   --color-accent: var(--surface-muted);
   --color-accent-foreground: var(--text);
   --color-popover: var(--surface);
+  --color-surface-subtle: var(--surface-subtle);
   --color-popover-foreground: var(--text);
   --color-border: var(--border);
   --color-input: var(--border-strong);
@@ -31,6 +32,7 @@
     color-scheme: dark;
     --background: #161715;
     --surface: #20211e;
+    --surface-subtle: #20211e;
     --surface-muted: #2b2d28;
     --text: #eeeae0;
     --text-secondary: #b8b5aa;
@@ -55,6 +57,7 @@
     color-scheme: light;
     --background: #f4f1e9;
     --surface: #fffcf5;
+    --surface-subtle: #e8e3d8;
     --surface-muted: #e8e3d8;
     --text: #23251f;
     --text-secondary: #626357;
@@ -75,6 +78,15 @@
   a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
     outline: 2px solid var(--focus);
     outline-offset: 3px;
+  }
+}
+
+@utility page-container {
+  width: calc(100% - 32px);
+  max-width: 1180px;
+  margin-inline: auto;
+  @media (min-width: 768px) {
+    width: calc(100% - 48px);
   }
 }
 
