@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import BackendWakeupNotice from '../../components/BackendWakeupNotice';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import HeroGameCarousel from '../games/HeroGameCarousel';
@@ -7,8 +8,10 @@ import CatalogSection from '../games/CatalogSection';
 import { Button } from '@/components/ui/button';
 import SpoilerBoundaryDemo from './SpoilerBoundaryDemo';
 import ConversationFormats from './ConversationFormats';
+import { useAuth } from '../auth/useAuth';
 
 export default function HomePage() {
+  const { user, loading: authLoading } = useAuth();
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -77,6 +80,24 @@ export default function HomePage() {
       <div className="page-container">
         <CatalogSection games={games} loading={loading} error={error} onRetry={retryCatalog} />
       </div>
+      <section className="bg-surface-subtle py-12 md:py-16" aria-labelledby="join-title">
+        <div className="page-container flex flex-col gap-6 md:flex-row md:items-center md:justify-between md:gap-12">
+          <div className="grid max-w-[600px] gap-3">
+            <h2 id="join-title" className="text-2xl leading-[30px] font-semibold">Tu próxima conversación empieza donde estás jugando</h2>
+            <p className="leading-6 text-muted-foreground">Guardá tu progreso, compartí tus dudas y encontrá otras miradas sobre lo que ya jugaste.</p>
+          </div>
+          <div className="flex min-h-11 flex-wrap items-center gap-3 md:shrink-0">
+            {authLoading ? <LoadingIndicator label="Comprobando sesión" showLabel /> : user ? (
+              <Button asChild><Link to="/me/library">Ir a mi biblioteca</Link></Button>
+            ) : (
+              <>
+                <Button asChild><Link to="/register">Crear cuenta</Link></Button>
+                <Button asChild variant="ghost"><Link to="/login">Iniciar sesión</Link></Button>
+              </>
+            )}
+          </div>
+        </div>
+      </section>
       <footer className="bg-surface-subtle py-8 text-sm">
         <div className="page-container flex flex-wrap items-center justify-between gap-4">
         <strong className="font-semibold">Umbral</strong>
