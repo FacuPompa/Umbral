@@ -59,7 +59,7 @@ function SearchContent({ urlQuery, onSearch }) {
     <main className="grid w-full max-w-[840px] gap-8 py-8 md:gap-10 md:py-12" id="main-content">
       <PageHeading title="Buscar" description="Encontrá juegos del catálogo y perfiles de la comunidad." />
       <SearchForm query={query} onQueryChange={setQuery} onSubmit={submitSearch} loading={loading}
-        label="Título de juego o nombre de usuario" placeholder="Por ejemplo, Persona o LaPampa" hint="Escribí al menos dos caracteres. Mostramos hasta cinco resultados de cada grupo." />
+        label="Título de juego o nombre de usuario" hint="Escribí al menos dos caracteres. Mostramos hasta cinco resultados de cada grupo." />
       {loading && <LoadingIndicator label="Buscando resultados" showLabel />}
       {error && <StatusMessage kind="error">{error}</StatusMessage>}
       {!loading && !error && !searched && <StatusMessage>Los resultados aparecerán acá cuando hagas una búsqueda.</StatusMessage>}

@@ -1,4 +1,4 @@
-import GameRow from '@/components/GameRow';
+import GameShelf from './GameShelf';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import StatusMessage from '@/components/StatusMessage';
 import { Button } from '@/components/ui/button';
@@ -16,9 +16,7 @@ export default function CatalogSection({ games, loading, error, onRetry }) {
       {loading && <LoadingIndicator label="Cargando juegos" showLabel />}
       {error && <StatusMessage kind="error">No pudimos conectar con el catálogo todavía. <Button variant="ghost" type="button" onClick={onRetry}>Reintentar catálogo</Button></StatusMessage>}
       {!loading && !error && games.length === 0 && <StatusMessage>Todavía no hay juegos disponibles.</StatusMessage>}
-      {!loading && !error && games.length > 0 && <ol className="border-t border-border">
-        {games.map((game) => <li key={game.id}><GameRow gameId={game.id} title={game.title} description={game.description} coverImageUrl={game.coverImageUrl} /></li>)}
-      </ol>}
+      {!loading && !error && games.length > 0 && <GameShelf games={games} />}
     </section>
   );
 }

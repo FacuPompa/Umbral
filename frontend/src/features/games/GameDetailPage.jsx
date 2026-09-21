@@ -388,7 +388,7 @@ export default function GameDetailPage() {
                 <Input
                   maxLength="255"
                   onChange={(event) => setCheckpointSuggestionLabel(event.target.value)}
-                  placeholder="Por ejemplo: Primer palacio"
+                  placeholder="Nombre del checkpoint"
                   required
                   value={checkpointSuggestionLabel}
                 />
