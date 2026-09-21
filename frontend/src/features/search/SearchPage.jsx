@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
-import LoadingIndicator from '@/components/LoadingIndicator';
 import PageHeading from '@/components/PageHeading';
 import SearchForm from '@/components/SearchForm';
 import GameRow from '@/components/GameRow';
 import InitialAvatar from '@/components/InitialAvatar';
 import StatusMessage from '@/components/StatusMessage';
 import { searchCatalogAndUsers } from '../games/gameApi';
+import SearchDiscovery from './SearchDiscovery';
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -60,9 +60,8 @@ function SearchContent({ urlQuery, onSearch }) {
       <PageHeading title="Buscar" description="Encontrá juegos del catálogo y perfiles de la comunidad." />
       <SearchForm query={query} onQueryChange={setQuery} onSubmit={submitSearch} loading={loading}
         label="Título de juego o nombre de usuario" hint="Escribí al menos dos caracteres. Mostramos hasta cinco resultados de cada grupo." />
-      {loading && <LoadingIndicator label="Buscando resultados" showLabel />}
       {error && <StatusMessage kind="error">{error}</StatusMessage>}
-      {!loading && !error && !searched && <StatusMessage>Los resultados aparecerán acá cuando hagas una búsqueda.</StatusMessage>}
+      {!searched && <SearchDiscovery />}
       {!loading && !error && searched && !hasResults && <StatusMessage>No encontramos juegos ni personas con “{normalized}”.</StatusMessage>}
       {!loading && !error && hasResults && (
         <m.div className="grid gap-10" initial={{ opacity: reduced ? 1 : 0 }} animate={{ opacity: 1 }} transition={{ duration: reduced ? 0 : 0.12 }}>
