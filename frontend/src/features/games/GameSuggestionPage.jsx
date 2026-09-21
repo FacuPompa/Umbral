@@ -88,7 +88,7 @@ export default function GameSuggestionPage() {
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
             <Input id="game-search-query" maxLength={100} minLength={2}
               aria-describedby="game-search-query-hint" onChange={(event) => setQuery(event.target.value)}
-              placeholder="Por ejemplo: Persona 3 Reload" required value={query} />
+              placeholder="Nombre del juego" required value={query} />
             <Button disabled={searching || submittingId !== null || query.trim().length < 2} type="submit">
               {searching ? <LoadingIndicator label="Buscando juegos" showLabel /> : <><Search aria-hidden="true" />Buscar</>}
             </Button>
