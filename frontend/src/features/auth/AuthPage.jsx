@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, LockKeyhole } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/field';
 import StatusMessage from '@/components/StatusMessage';
@@ -54,8 +54,8 @@ export default function AuthPage({ mode }) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[460px] py-12 md:py-16" id="main-content">
-      <section className="grid gap-8" aria-labelledby="auth-title">
+    <main className="mx-auto grid w-full max-w-[1000px] gap-8 py-8 md:py-12 lg:grid-cols-2 lg:items-start lg:gap-16" id="main-content">
+      <section className="mx-auto grid w-full max-w-[460px] gap-8" aria-labelledby="auth-title">
         <header className="grid gap-3">
           <h1 className="text-[28px] leading-[34px] font-semibold tracking-[-0.02em] md:text-4xl md:leading-[42px]" id="auth-title">{isRegister ? 'Creá tu cuenta' : 'Iniciá sesión'}</h1>
           <p className="text-base leading-6 text-muted-foreground">
@@ -115,6 +115,31 @@ export default function AuthPage({ mode }) {
           </Link>
         </p>
       </section>
+      <aside className="mx-auto w-full max-w-[460px] border-t border-border pt-6 lg:border-t-0 lg:bg-surface-subtle lg:p-8" aria-label="Cómo funciona la lectura por progreso">
+        <p className="text-sm leading-6 text-muted-foreground lg:hidden">Marcá hasta dónde jugaste para leer conversaciones de ese tramo y los anteriores.</p>
+        <div className="hidden lg:grid lg:gap-6">
+          <h2 className="text-2xl leading-[30px] font-semibold">La conversación llega hasta donde vos llegaste.</h2>
+          <p className="leading-6 text-muted-foreground">Guardá tu biblioteca y marcá tu progreso en cada juego. Vas a poder compartir dudas y leer las publicaciones de los tramos que ya alcanzaste.</p>
+          <figure className="grid gap-4">
+            <figcaption className="text-sm text-muted-foreground">Así funciona el límite de lectura</figcaption>
+            <ol className="border-l border-border pl-5">
+              <li className="grid gap-1 py-4">
+                <span className="text-sm text-muted-foreground">Tramo anterior</span>
+                <span className="font-medium">Podés leer y participar</span>
+              </li>
+              <li className="grid gap-1 border-y border-primary py-4">
+                <span className="text-sm font-medium text-primary">Tu progreso · solo hasta acá</span>
+                <span className="font-medium">Conversaciones habilitadas</span>
+              </li>
+              <li className="grid gap-2 py-4 text-muted-foreground">
+                <span className="flex items-center gap-2 text-sm"><LockKeyhole className="size-4" aria-hidden="true" />Más adelante</span>
+                <span className="text-sm leading-6">Las publicaciones de tramos posteriores quedan fuera de tu lectura.</span>
+              </li>
+            </ol>
+          </figure>
+          <p className="border-t border-border pt-4 text-sm leading-6 text-muted-foreground">Vos elegís cuándo actualizar tu progreso.</p>
+        </div>
+      </aside>
     </main>
   );
 }
