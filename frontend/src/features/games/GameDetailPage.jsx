@@ -17,6 +17,8 @@ import {
 import { getGameArtwork } from './gameArtwork';
 import { ArrowLeft, MessageCircle, Plus } from 'lucide-react';
 import CheckpointRail from './CheckpointRail';
+import EntryComposer from './EntryComposer';
+import { entryTypeLabels } from './journalEntryTypes';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/field';
 import GameArtwork from '@/components/GameArtwork';
@@ -32,13 +34,6 @@ function formatEntryDate(createdAt) {
     year: 'numeric',
   }).format(new Date(createdAt));
 }
-
-const entryTypeLabels = {
-  REFLECTION: 'Reflexión',
-  QUESTION: 'Duda',
-  THEORY: 'Teoría',
-  REVIEW: 'Reseña',
-};
 
 const libraryStatusLabels = {
   WANT_TO_PLAY: 'Quiero jugar',
@@ -244,6 +239,7 @@ export default function GameDetailPage() {
 
   async function createEntry(event) {
     event.preventDefault();
+    if (savingEntry) return;
     setSavingEntry(true);
     setSavingEntryError(null);
     try {
@@ -404,7 +400,7 @@ export default function GameDetailPage() {
         </section>
 
         <div className="grid min-w-0 gap-12">
-          <section className="grid gap-6" aria-labelledby="entry-title">
+          <section className="grid gap-6 border-y border-border bg-surface-subtle px-4 py-6 sm:p-6" aria-labelledby="entry-title">
             <header className="grid gap-3 [&_h2]:text-2xl [&_h2]:leading-[30px] [&_h2]:font-semibold [&_h2]:tracking-normal [&_p]:text-base [&_p]:leading-6 [&_p]:text-muted-foreground">
               <h2 id="entry-title">Compartí lo que ya conocés</h2>
               <p>Publicá dentro del límite que marca tu progreso.</p>
@@ -417,34 +413,8 @@ export default function GameDetailPage() {
             )}
             {user && !progress && <StatusMessage>Marcá tu avance antes de publicar una entrada.</StatusMessage>}
             {user && progress && !loadingCheckpoints && !checkpointsError && (
-              <form className="grid gap-5" onSubmit={createEntry}>
-                <label className="grid gap-2 text-base leading-6 font-medium">
-                  <span id="entry-checkpoint-label">Esta entrada habla hasta</span>
-                  <select aria-labelledby="entry-checkpoint-label" className="min-h-11 w-full min-w-0 rounded-md border border-input bg-popover px-3 text-base font-normal text-foreground" value={entryCheckpointId} onChange={(event) => setEntryCheckpointId(event.target.value)}>
-                    {availableCheckpoints.map((checkpoint) => <option key={checkpoint.id} value={checkpoint.id}>{checkpoint.label}</option>)}
-                  </select>
-                </label>
-                <label className="grid gap-2 text-base leading-6 font-medium">
-                  <span id="entry-type-label">Tipo de publicación</span>
-                  <select aria-labelledby="entry-type-label" className="min-h-11 w-full min-w-0 rounded-md border border-input bg-popover px-3 text-base font-normal text-foreground" value={entryType} onChange={(event) => setEntryType(event.target.value)}>
-                    <option value="">Elegí una opción</option>
-                    <option value="REFLECTION">Reflexión</option>
-                    <option value="QUESTION">Duda</option>
-                    <option value="THEORY">Teoría</option>
-                    <option value="REVIEW">Reseña</option>
-                  </select>
-                </label>
-                <label className="grid gap-2 text-base leading-6 font-medium">
-                  Tu entrada
-                  <Textarea value={entryContent} maxLength={5000} onChange={(event) => setEntryContent(event.target.value)} placeholder="Compartí lo que te dejó este tramo..." />
-                </label>
-                <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between [&_p]:max-w-[400px] [&_p]:text-sm [&_p]:leading-5 [&_p]:text-muted-foreground">
-                  <p>Solo podés publicar sobre checkpoints que ya alcanzaste.</p>
-                  <Button  disabled={savingEntry || !entryCheckpointId || !entryType || !entryContent.trim()} type="submit">
-                    {savingEntry ? <LoadingIndicator label="Publicando entrada" showLabel /> : 'Publicar'}
-                  </Button>
-                </div>
-              </form>
+              <EntryComposer checkpoints={availableCheckpoints} checkpointId={entryCheckpointId} type={entryType} content={entryContent}
+                saving={savingEntry} onCheckpointChange={setEntryCheckpointId} onTypeChange={setEntryType} onContentChange={setEntryContent} onSubmit={createEntry} />
             )}
             {user && savingEntryError && <StatusMessage kind="error">{savingEntryError}</StatusMessage>}
           </section>
