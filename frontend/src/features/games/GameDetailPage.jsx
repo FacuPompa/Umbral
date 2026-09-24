@@ -15,7 +15,10 @@ import {
   updateGameProgress,
 } from './gameApi';
 import { getGameArtwork } from './gameArtwork';
-import { ArrowLeft, Check, MessageCircle, Plus } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Plus } from 'lucide-react';
+import CheckpointRail from './CheckpointRail';
+import EntryComposer from './EntryComposer';
+import { entryTypeLabels } from './journalEntryTypes';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/field';
 import GameArtwork from '@/components/GameArtwork';
@@ -31,13 +34,6 @@ function formatEntryDate(createdAt) {
     year: 'numeric',
   }).format(new Date(createdAt));
 }
-
-const entryTypeLabels = {
-  REFLECTION: 'Reflexión',
-  QUESTION: 'Duda',
-  THEORY: 'Teoría',
-  REVIEW: 'Reseña',
-};
 
 const libraryStatusLabels = {
   WANT_TO_PLAY: 'Quiero jugar',
@@ -243,6 +239,7 @@ export default function GameDetailPage() {
 
   async function createEntry(event) {
     event.preventDefault();
+    if (savingEntry) return;
     setSavingEntry(true);
     setSavingEntryError(null);
     try {
@@ -325,14 +322,21 @@ export default function GameDetailPage() {
     <main className="grid gap-8 py-8 md:gap-10 md:py-12" id="main-content" ref={mainRef} tabIndex={-1}>
       <Button asChild variant="ghost" className="w-fit px-0"><Link to="/#catalogo"><ArrowLeft aria-hidden="true" />Volver al catálogo</Link></Button>
 
-      <section className="grid grid-cols-[64px_minmax(0,1fr)] items-start gap-4 border-b border-border pb-8 sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-6" aria-labelledby="game-title">
-        <GameArtwork src={artwork} title={game.title} className="h-20 w-16 sm:h-40 sm:w-30" />
-        <div className="grid min-w-0 gap-4">
-          <h1 id="game-title" className="break-words text-[28px] leading-[34px] font-semibold tracking-[-0.02em] sm:text-4xl sm:leading-[42px]">{game.title}</h1>
-          <p className="max-w-[720px] break-words text-base leading-6 text-muted-foreground">{game.description}</p>
-          <div>
+      <section className="grid grid-cols-[96px_minmax(0,1fr)] items-start gap-x-4 gap-y-6 border-b border-border pb-8 sm:grid-cols-[208px_minmax(0,1fr)] sm:gap-x-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-x-12" aria-labelledby="game-title">
+        <GameArtwork src={artwork} title={game.title} className="aspect-[4/5] w-24 sm:row-span-3 sm:w-52 lg:w-60" />
+        <h1 id="game-title" className="min-w-0 self-center break-words text-[28px] leading-[34px] font-semibold tracking-[-0.02em] sm:self-end sm:text-4xl sm:leading-[42px]">{game.title}</h1>
+        <p className="col-span-2 max-w-[720px] break-words text-base leading-7 text-muted-foreground sm:col-span-1">{game.description}</p>
+        <div className="col-span-2 grid min-w-0 gap-4 sm:col-span-1">
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-4 border-t border-border pt-5">
             {user && libraryEntry ? (
-              <Button asChild variant="outline"><Link to="/me/library"><Check aria-hidden="true" />En biblioteca · {libraryStatusLabels[libraryEntry.status]}</Link></Button>
+              <>
+                <dl className="grid gap-1">
+                  <dt className="text-sm text-muted-foreground">En tu biblioteca</dt>
+                  <dd className="font-medium">{libraryStatusLabels[libraryEntry.status] ?? 'Sin estado'}</dd>
+                </dl>
+                {libraryEntry.favorite && <span className="text-sm font-medium">Favorito</span>}
+                <Button asChild variant="outline"><Link to="/me/library">Ver biblioteca</Link></Button>
+              </>
             ) : (
               <Button variant="outline" disabled={savingLibrary} onClick={addGameToLibrary} type="button">
                 {savingLibrary ? <LoadingIndicator label="Guardando en biblioteca" showLabel /> : <><Plus aria-hidden="true" />Guardar para jugar</>}
@@ -356,28 +360,7 @@ export default function GameDetailPage() {
           {loadingCheckpoints && <LoadingIndicator label="Cargando checkpoints" showLabel />}
           {checkpointsError && <StatusMessage kind="error">{checkpointsError}</StatusMessage>}
           {!loadingCheckpoints && !checkpointsError && (
-            <ol className="border-t border-border">
-              {checkpoints.map((checkpoint) => {
-                const isCurrentCheckpoint = progress?.checkpointId === checkpoint.id;
-                return (
-                  <li key={checkpoint.id}>
-                    <button
-                      className={`grid w-full grid-cols-[24px_minmax(0,1fr)] items-center gap-x-3 gap-y-1 border-b border-l-2 border-border px-3 py-3 text-left text-base leading-6 hover:bg-accent disabled:opacity-60 ${isCurrentCheckpoint ? 'border-l-primary bg-accent text-foreground' : 'border-l-transparent text-muted-foreground'}`}
-                      aria-current={isCurrentCheckpoint ? 'step' : undefined}
-                      disabled={savingProgress}
-                      onClick={() => requestCheckpointChange(checkpoint)}
-                      type="button"
-                    >
-                      <span className="text-sm leading-5 text-muted-foreground">{String(checkpoint.position).padStart(2, '0')}</span>
-                      <span className="min-w-0 break-words">{checkpoint.label}</span>
-                      <span className="col-start-2 flex items-center gap-1 text-sm leading-5 text-primary">
-                        {isCurrentCheckpoint && (savingProgress ? <LoadingIndicator label="Guardando avance" showLabel /> : <><Check aria-hidden="true" className="size-4" />Actual</>)}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
+            <CheckpointRail checkpoints={checkpoints} progress={progress} saving={savingProgress} onSelect={requestCheckpointChange} />
           )}
           {user && !loadingCheckpoints && !checkpointsError && (
             <form className="grid gap-4 border-t border-border pt-6 [&_h3]:text-base [&_h3]:font-semibold [&_p]:text-sm [&_p]:leading-5 [&_p]:text-muted-foreground" onSubmit={createCheckpointSuggestion}>
@@ -417,7 +400,7 @@ export default function GameDetailPage() {
         </section>
 
         <div className="grid min-w-0 gap-12">
-          <section className="grid gap-6" aria-labelledby="entry-title">
+          <section className="grid gap-6 border-y border-border bg-surface-subtle px-4 py-6 sm:p-6" aria-labelledby="entry-title">
             <header className="grid gap-3 [&_h2]:text-2xl [&_h2]:leading-[30px] [&_h2]:font-semibold [&_h2]:tracking-normal [&_p]:text-base [&_p]:leading-6 [&_p]:text-muted-foreground">
               <h2 id="entry-title">Compartí lo que ya conocés</h2>
               <p>Publicá dentro del límite que marca tu progreso.</p>
@@ -430,34 +413,8 @@ export default function GameDetailPage() {
             )}
             {user && !progress && <StatusMessage>Marcá tu avance antes de publicar una entrada.</StatusMessage>}
             {user && progress && !loadingCheckpoints && !checkpointsError && (
-              <form className="grid gap-5" onSubmit={createEntry}>
-                <label className="grid gap-2 text-base leading-6 font-medium">
-                  <span id="entry-checkpoint-label">Esta entrada habla hasta</span>
-                  <select aria-labelledby="entry-checkpoint-label" className="min-h-11 w-full min-w-0 rounded-md border border-input bg-popover px-3 text-base font-normal text-foreground" value={entryCheckpointId} onChange={(event) => setEntryCheckpointId(event.target.value)}>
-                    {availableCheckpoints.map((checkpoint) => <option key={checkpoint.id} value={checkpoint.id}>{checkpoint.label}</option>)}
-                  </select>
-                </label>
-                <label className="grid gap-2 text-base leading-6 font-medium">
-                  <span id="entry-type-label">Tipo de publicación</span>
-                  <select aria-labelledby="entry-type-label" className="min-h-11 w-full min-w-0 rounded-md border border-input bg-popover px-3 text-base font-normal text-foreground" value={entryType} onChange={(event) => setEntryType(event.target.value)}>
-                    <option value="">Elegí una opción</option>
-                    <option value="REFLECTION">Reflexión</option>
-                    <option value="QUESTION">Duda</option>
-                    <option value="THEORY">Teoría</option>
-                    <option value="REVIEW">Reseña</option>
-                  </select>
-                </label>
-                <label className="grid gap-2 text-base leading-6 font-medium">
-                  Tu entrada
-                  <Textarea value={entryContent} maxLength={5000} onChange={(event) => setEntryContent(event.target.value)} placeholder="Compartí lo que te dejó este tramo..." />
-                </label>
-                <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between [&_p]:max-w-[400px] [&_p]:text-sm [&_p]:leading-5 [&_p]:text-muted-foreground">
-                  <p>Solo podés publicar sobre checkpoints que ya alcanzaste.</p>
-                  <Button  disabled={savingEntry || !entryCheckpointId || !entryType || !entryContent.trim()} type="submit">
-                    {savingEntry ? <LoadingIndicator label="Publicando entrada" showLabel /> : 'Publicar'}
-                  </Button>
-                </div>
-              </form>
+              <EntryComposer checkpoints={availableCheckpoints} checkpointId={entryCheckpointId} type={entryType} content={entryContent}
+                saving={savingEntry} onCheckpointChange={setEntryCheckpointId} onTypeChange={setEntryType} onContentChange={setEntryContent} onSubmit={createEntry} />
             )}
             {user && savingEntryError && <StatusMessage kind="error">{savingEntryError}</StatusMessage>}
           </section>
