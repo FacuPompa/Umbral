@@ -15,7 +15,8 @@ import {
   updateGameProgress,
 } from './gameApi';
 import { getGameArtwork } from './gameArtwork';
-import { ArrowLeft, Check, MessageCircle, Plus } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Plus } from 'lucide-react';
+import CheckpointRail from './CheckpointRail';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/field';
 import GameArtwork from '@/components/GameArtwork';
@@ -363,28 +364,7 @@ export default function GameDetailPage() {
           {loadingCheckpoints && <LoadingIndicator label="Cargando checkpoints" showLabel />}
           {checkpointsError && <StatusMessage kind="error">{checkpointsError}</StatusMessage>}
           {!loadingCheckpoints && !checkpointsError && (
-            <ol className="border-t border-border">
-              {checkpoints.map((checkpoint) => {
-                const isCurrentCheckpoint = progress?.checkpointId === checkpoint.id;
-                return (
-                  <li key={checkpoint.id}>
-                    <button
-                      className={`grid w-full grid-cols-[24px_minmax(0,1fr)] items-center gap-x-3 gap-y-1 border-b border-l-2 border-border px-3 py-3 text-left text-base leading-6 hover:bg-accent disabled:opacity-60 ${isCurrentCheckpoint ? 'border-l-primary bg-accent text-foreground' : 'border-l-transparent text-muted-foreground'}`}
-                      aria-current={isCurrentCheckpoint ? 'step' : undefined}
-                      disabled={savingProgress}
-                      onClick={() => requestCheckpointChange(checkpoint)}
-                      type="button"
-                    >
-                      <span className="text-sm leading-5 text-muted-foreground">{String(checkpoint.position).padStart(2, '0')}</span>
-                      <span className="min-w-0 break-words">{checkpoint.label}</span>
-                      <span className="col-start-2 flex items-center gap-1 text-sm leading-5 text-primary">
-                        {isCurrentCheckpoint && (savingProgress ? <LoadingIndicator label="Guardando avance" showLabel /> : <><Check aria-hidden="true" className="size-4" />Actual</>)}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
+            <CheckpointRail checkpoints={checkpoints} progress={progress} saving={savingProgress} onSelect={requestCheckpointChange} />
           )}
           {user && !loadingCheckpoints && !checkpointsError && (
             <form className="grid gap-4 border-t border-border pt-6 [&_h3]:text-base [&_h3]:font-semibold [&_p]:text-sm [&_p]:leading-5 [&_p]:text-muted-foreground" onSubmit={createCheckpointSuggestion}>
