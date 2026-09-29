@@ -18,6 +18,8 @@ import { getGameArtwork } from './gameArtwork';
 import { ArrowLeft, MessageCircle, Plus } from 'lucide-react';
 import CheckpointRail from './CheckpointRail';
 import EntryComposer from './EntryComposer';
+import PublicationAuthor from './PublicationAuthor';
+import SignedOutGate from './SignedOutGate';
 import { entryTypeLabels } from './journalEntryTypes';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/field';
@@ -26,14 +28,6 @@ import StatusMessage from '@/components/StatusMessage';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import AccountPrompt from '@/components/AccountPrompt';
 import LoadingIndicator from '../../components/LoadingIndicator';
-
-function formatEntryDate(createdAt) {
-  return new Intl.DateTimeFormat('es-AR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(createdAt));
-}
 
 const libraryStatusLabels = {
   WANT_TO_PLAY: 'Quiero jugar',
@@ -400,17 +394,12 @@ export default function GameDetailPage() {
         </section>
 
         <div className="grid min-w-0 gap-12">
+          {!user ? <SignedOutGate from={location} /> : <>
           <section className="grid gap-6 border-y border-border bg-surface-subtle px-4 py-6 sm:p-6" aria-labelledby="entry-title">
             <header className="grid gap-3 [&_h2]:text-2xl [&_h2]:leading-[30px] [&_h2]:font-semibold [&_h2]:tracking-normal [&_p]:text-base [&_p]:leading-6 [&_p]:text-muted-foreground">
               <h2 id="entry-title">Compartí lo que ya conocés</h2>
               <p>Publicá dentro del límite que marca tu progreso.</p>
             </header>
-            {!user && (
-              <div className="grid justify-items-start gap-4">
-                <p>Para publicar una reflexión, duda, teoría o reseña necesitás una cuenta y un avance guardado.</p>
-                <Button onClick={() => setAccountPrompt('publicar una entrada')} type="button">Crear cuenta para publicar</Button>
-              </div>
-            )}
             {user && !progress && <StatusMessage>Marcá tu avance antes de publicar una entrada.</StatusMessage>}
             {user && progress && !loadingCheckpoints && !checkpointsError && (
               <EntryComposer checkpoints={availableCheckpoints} checkpointId={entryCheckpointId} type={entryType} content={entryContent}
@@ -424,12 +413,6 @@ export default function GameDetailPage() {
               <h2 id="journal-title">Conversaciones que ya podés leer</h2>
               <p>Conversaciones de tu tramo y de los anteriores.</p>
             </header>
-            {!user && (
-              <div className="grid justify-items-start gap-4">
-                <p>Las conversaciones se filtran según el tramo que cada persona alcanzó. Creá una cuenta para guardar el tuyo y ver solo lo que ya conocés.</p>
-                <Button variant="outline" onClick={() => setAccountPrompt('leer conversaciones seguras')} type="button">Crear cuenta</Button>
-              </div>
-            )}
             {user && loadingJournalEntries && <LoadingIndicator label="Cargando entradas" showLabel />}
             {user && journalEntriesError && <StatusMessage kind="error">{journalEntriesError}</StatusMessage>}
             {user && !loadingJournalEntries && !journalEntriesError && journalEntries.length === 0 && (
@@ -443,24 +426,28 @@ export default function GameDetailPage() {
                   const isLoadingReplies = loadingRepliesEntryId === entry.id;
 
                   return (
-                    <li key={entry.id} className="grid min-w-0 gap-4 border-b border-border py-6">
-                      <p className="break-words text-sm leading-5 text-muted-foreground">
-                        @{entry.authorHandle} · {entry.checkpointLabel} ·{' '}
-                        <span className="font-medium text-foreground">{entryTypeLabels[entry.type] ?? entry.type}</span>{' '}
-                        · {formatEntryDate(entry.createdAt)}
-                      </p>
+                    <li key={entry.id} className="min-w-0 border-b border-border py-8">
+                      <article className="grid min-w-0 gap-5" aria-label={`${entryTypeLabels[entry.type] ?? entry.type} de ${entry.authorHandle}`}>
+                      <header className="grid gap-3">
+                        <PublicationAuthor handle={entry.authorHandle} createdAt={entry.createdAt} />
+                        <div className="grid gap-1 border-l-2 border-primary pl-3">
+                          <p className="text-sm font-medium text-foreground">{entryTypeLabels[entry.type] ?? entry.type}</p>
+                          <p className="break-words text-sm leading-5 text-muted-foreground">Hasta {entry.checkpointLabel}</p>
+                        </div>
+                      </header>
                       <p className="whitespace-pre-wrap break-words text-[17px] leading-[27px] text-foreground sm:text-lg sm:leading-[29px]">{entry.content}</p>
                       <Button
                         variant="ghost" className="w-fit px-0"
                         type="button"
                         aria-expanded={isRepliesOpen}
+                        aria-controls={isRepliesOpen ? `entry-${entry.id}-replies` : undefined}
                         onClick={() => toggleReplies(entry.id)}
                       >
                         <MessageCircle aria-hidden="true" />{isRepliesOpen ? 'Ocultar respuestas' : 'Ver respuestas'}
                       </Button>
 
                       {isRepliesOpen && (
-                        <div className="grid min-w-0 gap-5 border-l border-border pl-3 sm:pl-4">
+                        <div id={`entry-${entry.id}-replies`} role="region" aria-label={`Respuestas a ${entry.authorHandle}`} className="ml-2 grid min-w-0 gap-5 border-l border-border pl-4 sm:ml-4 sm:pl-6">
                           {isLoadingReplies && <p className="text-sm leading-5 text-muted-foreground"><LoadingIndicator label="Cargando respuestas" showLabel /></p>}
                           {repliesError && <StatusMessage kind="error">{repliesError}</StatusMessage>}
                           {!isLoadingReplies && !repliesError && replies.length === 0 && (
@@ -470,9 +457,7 @@ export default function GameDetailPage() {
                             <ol className="grid gap-5">
                               {replies.map((reply) => (
                                 <li key={reply.id} className="grid min-w-0 gap-3 border-b border-border pb-5 last:border-0">
-                                  <p className="break-words text-sm leading-5 text-muted-foreground">
-                                    @{reply.authorHandle} · {formatEntryDate(reply.createdAt)}
-                                  </p>
+                                  <PublicationAuthor handle={reply.authorHandle} createdAt={reply.createdAt} />
                                   <p className="whitespace-pre-wrap break-words text-[17px] leading-[27px] text-foreground sm:text-lg sm:leading-[29px]">{reply.content}</p>
                                 </li>
                               ))}
@@ -500,12 +485,14 @@ export default function GameDetailPage() {
                           {savingReplyError && <StatusMessage kind="error">{savingReplyError}</StatusMessage>}
                         </div>
                       )}
+                      </article>
                     </li>
                   );
                 })}
               </ol>
             )}
           </section>
+          </>}
         </div>
       </div>
 
