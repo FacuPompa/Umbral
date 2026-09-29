@@ -8,11 +8,11 @@ import {
   updateCurrentUserLibraryGameFavorite,
   updateCurrentUserLibraryGameStatus,
 } from '../games/gameApi';
-import { Star, Trash2 } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { LazyMotion, m, useReducedMotion } from 'motion/react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import PageHeading from '@/components/PageHeading';
-import GameRow from '@/components/GameRow';
+import LibraryGameRow from './LibraryGameRow';
 import StatusMessage from '@/components/StatusMessage';
 import { Button } from '@/components/ui/button';
 import { libraryStatusOptions } from './libraryLabels';
@@ -122,19 +122,41 @@ export default function LibraryPage() {
         <Button asChild variant="outline"><Link to="/#catalogo">Explorar catálogo</Link></Button>
       </PageHeading>
 
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por estado">
-          {filters.map((filter) => (
-            <Button aria-pressed={activeFilter === filter.value}
-              variant={activeFilter === filter.value ? 'primary' : 'ghost'} key={filter.value}
-              onClick={() => setActiveFilter(filter.value)} type="button">{filter.label}</Button>
-          ))}
-        </div>
-        <label className="inline-flex min-h-11 items-center gap-3 text-sm">
-          <input className="size-4 accent-primary" checked={favoritesOnly} onChange={(event) => setFavoritesOnly(event.target.checked)} type="checkbox" />
-          Solo favoritos
-        </label>
-      </div>
+      {!loading && library.length > 0 && (
+        <section className="grid gap-3" aria-label="Filtros de biblioteca">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <fieldset className="min-w-0 w-full sm:w-auto">
+              <legend className="sr-only">Filtrar por estado</legend>
+              <div className="grid grid-cols-2 gap-1 rounded-md border border-border bg-surface-subtle p-1 sm:flex">
+                {filters.map((filter) => {
+                  const count = library.filter((game) => (
+                    (filter.value === 'ALL' || game.status === filter.value)
+                    && (!favoritesOnly || game.favorite)
+                  )).length;
+                  return (
+                    <label key={filter.value} className="relative min-w-0 cursor-pointer">
+                      <input className="peer sr-only" type="radio" name="library-filter" value={filter.value}
+                        checked={activeFilter === filter.value} onChange={() => setActiveFilter(filter.value)} />
+                      <span className="flex min-h-11 items-center justify-between gap-3 rounded-sm border border-transparent px-3 text-sm text-muted-foreground transition-colors hover:text-foreground peer-checked:border-border peer-checked:bg-background peer-checked:text-foreground peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring">
+                        {filter.label}<span className="tabular-nums" aria-hidden="true">{count}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+            <Button variant="outline" type="button" aria-pressed={favoritesOnly}
+              className={favoritesOnly ? 'border-primary text-primary' : ''}
+              onClick={() => setFavoritesOnly((current) => !current)}>
+              <Star aria-hidden="true" fill={favoritesOnly ? 'currentColor' : 'none'} />Solo favoritos
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground" role="status" aria-atomic="true">
+            {visibleGames.length} {visibleGames.length === 1 ? 'juego' : 'juegos'}
+            {activeFilter !== 'ALL' || favoritesOnly ? ` de ${library.length} en tu biblioteca` : ' en tu biblioteca'}
+          </p>
+        </section>
+      )}
 
       {loading && <LoadingIndicator label="Cargando biblioteca" showLabel />}
       {error && <StatusMessage kind="error">{error}</StatusMessage>}
@@ -145,36 +167,22 @@ export default function LibraryPage() {
           <Button asChild><Link to="/#catalogo">Explorar juegos</Link></Button>
         </section>
       )}
-      {!loading && library.length > 0 && visibleGames.length === 0 && <StatusMessage>No hay juegos que coincidan con este filtro.</StatusMessage>}
+      {!loading && library.length > 0 && visibleGames.length === 0 && (
+        <section className="grid justify-items-start gap-3 py-4">
+          <h2 className="text-xl font-semibold">No hay juegos con estos filtros</h2>
+          <p className="text-muted-foreground">Probá otro estado o mostrá toda tu biblioteca.</p>
+          <Button variant="outline" type="button" onClick={() => { setActiveFilter('ALL'); setFavoritesOnly(false); }}>Limpiar filtros</Button>
+        </section>
+      )}
       {!loading && visibleGames.length > 0 && (
         <LazyMotion features={loadLayoutFeatures}>
           <ol className="border-t border-border">
             {visibleGames.map((game) => (
               <m.li key={game.gameId} initial={false} layout={reduced ? false : 'position'} transition={{ layout: { duration: 0.16, ease: [0.2, 0, 0, 1] } }}>
-                <GameRow gameId={game.gameId} title={game.gameTitle} coverImageUrl={game.coverImageUrl}
-                  description={game.checkpointLabel ? `Avance: ${game.checkpointLabel}` : 'Todavía no marcaste un checkpoint.'}>
-                  <div className="grid gap-3 sm:w-60">
-                    <label className="grid gap-2 text-sm font-medium">
-                      <span id={`library-status-label-${game.gameId}`}>Estado</span>
-                      <select className="min-h-11 w-full rounded-md border border-input bg-popover px-3 text-base font-normal text-foreground"
-                        aria-labelledby={`library-status-label-${game.gameId}`}
-                        disabled={workingGameId !== null} onChange={(event) => changeStatus(game.gameId, event.target.value)} value={game.status}>
-                        {libraryStatusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
-                      </select>
-                    </label>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button variant="ghost" className="px-2" aria-pressed={game.favorite} aria-label={`Favorito: ${game.gameTitle}`}
-                        disabled={workingGameId !== null} onClick={() => changeFavorite(game)} type="button">
-                        <Star aria-hidden="true" fill={game.favorite ? 'currentColor' : 'none'} className={game.favorite ? 'text-primary' : ''} />Favorito
-                      </Button>
-                      <Button variant="destructive" className="px-2" disabled={workingGameId !== null}
-                        onClick={() => { setRemoveError(null); setPendingRemoval(game); }} type="button" aria-label={`Quitar ${game.gameTitle}`}>
-                        <Trash2 aria-hidden="true" />Quitar
-                      </Button>
-                    </div>
-                    {workingGameId === game.gameId && <LoadingIndicator label="Actualizando juego" showLabel />}
-                  </div>
-                </GameRow>
+                <LibraryGameRow game={game} disabled={workingGameId !== null} busy={workingGameId === game.gameId}
+                  onStatusChange={(status) => changeStatus(game.gameId, status)}
+                  onFavoriteChange={() => changeFavorite(game)}
+                  onRemove={() => { setRemoveError(null); setPendingRemoval(game); }} />
               </m.li>
             ))}
           </ol>
