@@ -8,6 +8,7 @@ import GameRow from '@/components/GameRow';
 import InitialAvatar from '@/components/InitialAvatar';
 import StatusMessage from '@/components/StatusMessage';
 import ContentLoading from '@/components/ContentLoading';
+import { Button } from '@/components/ui/button';
 import { searchCatalogAndUsers } from '../games/gameApi';
 import SearchDiscovery from './SearchDiscovery';
 
@@ -64,7 +65,15 @@ function SearchContent({ urlQuery, onSearch }) {
       {error && <StatusMessage kind="error">{error}</StatusMessage>}
       {loading && <ContentLoading label="Cargando resultados" />}
       {!searched && <SearchDiscovery />}
-      {!loading && !error && searched && !hasResults && <StatusMessage>No encontramos juegos ni personas con “{normalized}”.</StatusMessage>}
+      {!loading && !error && searched && !hasResults && (
+        <section className="grid justify-items-start gap-3 bg-surface-subtle p-5 sm:p-6" aria-labelledby="empty-search-title">
+          <h2 id="empty-search-title" className="text-xl font-semibold leading-7">No encontramos coincidencias</h2>
+          <p className="max-w-[600px] break-words text-base leading-6 text-muted-foreground">
+            No hay juegos ni personas con “{normalized}”. Revisá el nombre o probá con una parte más corta.
+          </p>
+          <Button asChild variant="outline"><Link to="/search">Explorar catálogo</Link></Button>
+        </section>
+      )}
       {!loading && !error && hasResults && (
         <m.div className="grid gap-10" initial={{ opacity: reduced ? 1 : 0 }} animate={{ opacity: 1 }} transition={{ duration: reduced ? 0 : 0.12 }}>
           {results.games.length > 0 && (
