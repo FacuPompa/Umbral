@@ -1,9 +1,9 @@
 export default function LibrarySummary({ total, completed, favorites }) {
   return (
-    <dl className="flex flex-wrap gap-x-8 gap-y-4 text-sm leading-5">
+    <dl className="grid grid-cols-3 gap-3 border-y border-border py-6 sm:gap-8">
       {[[total, 'En biblioteca'], [completed, 'Terminados'], [favorites, 'Favoritos']].map(([value, label]) => (
-        <div className="flex items-baseline gap-2" key={label}>
-          <dt className="text-muted-foreground">{label}</dt><dd className="font-semibold text-foreground">{value}</dd>
+        <div className="flex min-w-0 flex-col-reverse gap-2" key={label}>
+          <dt className="text-sm leading-5 text-muted-foreground">{label}</dt><dd className="text-3xl leading-9 font-semibold tabular-nums text-foreground">{value}</dd>
         </div>
       ))}
     </dl>

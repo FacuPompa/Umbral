@@ -15,6 +15,7 @@ import PageHeading from '../../components/PageHeading';
 import StatusMessage from '../../components/StatusMessage';
 import { Button } from '../../components/ui/button';
 import { Field, Textarea } from '../../components/ui/field';
+import ModerationLoading from './ModerationLoading';
 
 export default function GameModerationPage() {
   const { user, loading: loadingUser } = useAuth();
@@ -25,6 +26,7 @@ export default function GameModerationPage() {
   const [reviews, setReviews] = useState({});
   const [reloadKey, setReloadKey] = useState(0);
   const [error, setError] = useState(null);
+  const [lastReview, setLastReview] = useState(null);
 
   useEffect(() => {
     if (!user || user.role !== 'MODERATOR') return;
@@ -75,6 +77,7 @@ export default function GameModerationPage() {
         await rejectGameSuggestion(suggestion.id);
       }
       setSuggestions((currentSuggestions) => currentSuggestions.filter((item) => item.id !== suggestion.id));
+      setLastReview(action === 'approve' ? `${suggestion.title} se publicó en el catálogo.` : `Se rechazó la propuesta de ${suggestion.title}.`);
     } catch (requestError) {
       setReviews((current) => ({ ...current, [key]: { error: requestError.message } }));
     }
@@ -91,6 +94,9 @@ export default function GameModerationPage() {
         await rejectCheckpointSuggestion(suggestion.id);
       }
       setCheckpointSuggestions((currentSuggestions) => currentSuggestions.filter((item) => item.id !== suggestion.id));
+      setLastReview(action === 'approve'
+        ? `Se aprobó el checkpoint «${suggestion.label}» de ${suggestion.gameTitle}.`
+        : `Se rechazó el checkpoint «${suggestion.label}» de ${suggestion.gameTitle}.`);
     } catch (requestError) {
       setReviews((current) => ({ ...current, [key]: { error: requestError.message } }));
     }
@@ -99,7 +105,8 @@ export default function GameModerationPage() {
   return (
     <main className="mx-auto grid w-full max-w-[900px] gap-8 py-8 md:gap-12 md:py-12" id="main-content">
       <PageHeading title="Moderación" description="Revisá los juegos y checkpoints propuestos antes de incorporarlos al catálogo y habilitar conversaciones." />
-      {loading && <LoadingIndicator label="Cargando sugerencias pendientes" />}
+      {lastReview && <StatusMessage kind="success">{lastReview}</StatusMessage>}
+      {loading && <ModerationLoading />}
       {error && (
         <div className="grid justify-items-start gap-3">
           <StatusMessage kind="error">{error}</StatusMessage>
@@ -109,8 +116,11 @@ export default function GameModerationPage() {
       {!loading && !error && (
         <>
           <section aria-labelledby="game-suggestions-title" className="grid gap-4">
-            <h2 className="text-2xl font-semibold leading-[30px]" id="game-suggestions-title">Juegos pendientes</h2>
-            {suggestions.length === 0 ? <StatusMessage>No hay juegos pendientes de revisión.</StatusMessage> : (
+            <header className="grid gap-2 border-l-2 border-primary pl-4">
+              <h2 className="text-2xl font-semibold leading-[30px]" id="game-suggestions-title">Juegos pendientes <span className="ml-2 text-muted-foreground tabular-nums">{suggestions.length}</span></h2>
+              <p className="text-sm leading-6 text-muted-foreground">Revisá la edición y escribí una descripción sin adelantar la historia antes de publicar.</p>
+            </header>
+            {suggestions.length === 0 ? <div className="grid gap-2 bg-surface-subtle p-5"><p className="font-medium">No hay juegos pendientes de revisión.</p><p className="text-sm leading-6 text-muted-foreground">Las nuevas propuestas de la comunidad aparecerán en esta sección.</p></div> : (
               <ol className="divide-y divide-border border-y border-border">
                 {suggestions.map((suggestion) => {
                   const review = reviews[`game-${suggestion.id}`] ?? {};
@@ -119,7 +129,7 @@ export default function GameModerationPage() {
                   const fieldId = `description-${suggestion.id}`;
                   return (
                     <li key={suggestion.id} className="py-6">
-                      <article aria-labelledby={`game-title-${suggestion.id}`} className="grid min-w-0 gap-4 sm:grid-cols-[88px_minmax(0,1fr)] sm:gap-6">
+                      <article aria-labelledby={`game-title-${suggestion.id}`} className="grid min-w-0 gap-4 sm:grid-cols-[88px_minmax(0,1fr)] sm:gap-6" aria-busy={isWorking}>
                         <GameArtwork src={suggestion.coverImageUrl} title={suggestion.title} className="h-24 w-16 sm:h-28 sm:w-[88px]" />
                         <div className="grid min-w-0 gap-4">
                           <div className="grid gap-1">
@@ -149,21 +159,24 @@ export default function GameModerationPage() {
             {suggestions.length > 0 && <p className="text-sm leading-5 text-muted-foreground">Datos e imágenes de <a className="underline underline-offset-4" href="https://rawg.io/" rel="noreferrer" target="_blank">RAWG</a>.</p>}
           </section>
           <section aria-labelledby="checkpoint-suggestions-title" className="grid gap-4">
-            <h2 className="text-2xl font-semibold leading-[30px]" id="checkpoint-suggestions-title">Checkpoints pendientes</h2>
-            {checkpointSuggestions.length === 0 ? <StatusMessage>No hay checkpoints pendientes de revisión.</StatusMessage> : (
+            <header className="grid gap-2 border-l-2 border-primary pl-4">
+              <h2 className="text-2xl font-semibold leading-[30px]" id="checkpoint-suggestions-title">Checkpoints pendientes <span className="ml-2 text-muted-foreground tabular-nums">{checkpointSuggestions.length}</span></h2>
+              <p className="text-sm leading-6 text-muted-foreground">Comprobá que el nombre sea seguro y la posición corresponda al recorrido del juego.</p>
+            </header>
+            {checkpointSuggestions.length === 0 ? <div className="grid gap-2 bg-surface-subtle p-5"><p className="font-medium">No hay checkpoints pendientes de revisión.</p><p className="text-sm leading-6 text-muted-foreground">Las propuestas de tramos nuevos aparecerán acá para su revisión.</p></div> : (
               <ol className="divide-y divide-border border-y border-border">
                 {checkpointSuggestions.map((suggestion) => {
                   const review = reviews[`checkpoint-${suggestion.id}`] ?? {};
                   const isWorking = Boolean(review.action);
                   return (
                     <li key={suggestion.id} className="py-6">
-                      <article aria-labelledby={`checkpoint-title-${suggestion.id}`} className="grid min-w-0 gap-4">
-                        <div className="grid gap-1">
+                      <article aria-labelledby={`checkpoint-title-${suggestion.id}`} className="grid min-w-0 gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center" aria-busy={isWorking}>
+                        <div className="grid min-w-0 gap-1">
                           <h3 id={`checkpoint-title-${suggestion.id}`} className="break-words text-xl font-semibold leading-7">{suggestion.label}</h3>
                           <p className="break-words text-base leading-6">{suggestion.gameTitle} · posición {suggestion.position}</p>
                           <p className="break-words text-sm leading-5 text-muted-foreground">Sugerido por @{suggestion.suggestedByHandle}</p>
                         </div>
-                        {review.error && <StatusMessage kind="error">{review.error}</StatusMessage>}
+                        {review.error && <StatusMessage className="sm:col-span-2" kind="error">{review.error}</StatusMessage>}
                         <div className="flex flex-wrap gap-3">
                           <Button disabled={isWorking} onClick={() => reviewCheckpointSuggestion(suggestion, 'approve')}>
                             {review.action === 'approve' ? <LoadingIndicator label="Aprobando checkpoint" /> : 'Aprobar checkpoint'}

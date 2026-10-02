@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import { useAuth } from '../auth/useAuth';
 import { fetchCurrentUserLibrary } from '../games/gameApi';
+import ProfileFavorites from './ProfileFavorites';
 
 export default function ProfilePage() {
   const { user, loading: loadingUser } = useAuth();
@@ -49,19 +50,17 @@ export default function ProfilePage() {
 
   return (
     <main className="grid w-full max-w-[840px] gap-8 py-8 md:gap-10 md:py-12" id="main-content">
-      <ProfileIdentity handle={user.handle} description="Tu espacio para seguir juegos y volver a las conversaciones que ya podés leer." />
-      <div><Button asChild variant="outline"><Link to={`/users/${encodeURIComponent(user.handle)}`}>Ver perfil público</Link></Button></div>
+      <ProfileIdentity handle={user.handle} description="Tu espacio para seguir juegos y volver a las conversaciones que ya podés leer.">
+        <Button asChild><Link to="/me/library">Ver mi biblioteca</Link></Button>
+        <Button asChild variant="outline"><Link to={`/users/${encodeURIComponent(user.handle)}`}>Ver perfil público</Link></Button>
+      </ProfileIdentity>
       {loading && <LoadingIndicator label="Cargando perfil" showLabel />}
       {error && <StatusMessage kind="error">{error}</StatusMessage>}
       {!loading && !error && (
-        <section className="grid justify-items-start gap-6 border-t border-border pt-8" aria-labelledby="profile-library-title">
-          <div className="grid gap-3">
-            <h2 className="text-2xl leading-[30px] font-semibold tracking-normal" id="profile-library-title">Tu biblioteca</h2>
-            <p className="text-base leading-6 text-muted-foreground">Organizá los juegos que querés jugar, los que estás siguiendo y los que terminaste.</p>
-          </div>
-          <LibrarySummary total={library.length} completed={completedCount} favorites={favoriteCount} />
-          <Button asChild><Link to="/me/library">Ver mi biblioteca</Link></Button>
-        </section>
+        <>
+          <section aria-label="Resumen de tu biblioteca"><LibrarySummary total={library.length} completed={completedCount} favorites={favoriteCount} /></section>
+          <ProfileFavorites games={library.filter((game) => game.favorite)} personal />
+        </>
       )}
     </main>
   );
