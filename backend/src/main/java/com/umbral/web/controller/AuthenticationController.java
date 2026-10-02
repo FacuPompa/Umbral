@@ -18,8 +18,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfLogoutHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,15 +36,21 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
+    private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
+    private final CsrfLogoutHandler csrfLogoutHandler;
 
     public AuthenticationController(
             AuthenticationService authenticationService,
             AuthenticationManager authenticationManager,
-            SecurityContextRepository securityContextRepository
+            SecurityContextRepository securityContextRepository,
+            SessionAuthenticationStrategy sessionAuthenticationStrategy,
+            CookieCsrfTokenRepository csrfTokenRepository
     ) {
         this.authenticationService = authenticationService;
         this.authenticationManager = authenticationManager;
         this.securityContextRepository = securityContextRepository;
+        this.sessionAuthenticationStrategy = sessionAuthenticationStrategy;
+        this.csrfLogoutHandler = new CsrfLogoutHandler(csrfTokenRepository);
     }
 
     @GetMapping("/csrf")
@@ -70,6 +79,7 @@ public class AuthenticationController {
                             request.password()
                     )
             );
+            sessionAuthenticationStrategy.onAuthentication(authentication, servletRequest, servletResponse);
             SecurityContext context = SecurityContextHolder.createEmptyContext();
             context.setAuthentication(authentication);
             SecurityContextHolder.setContext(context);
@@ -92,7 +102,10 @@ public class AuthenticationController {
             HttpServletResponse servletResponse,
             Authentication authentication
     ) {
-        new SecurityContextLogoutHandler().logout(servletRequest, servletResponse, authentication);
+        csrfLogoutHandler.logout(servletRequest, servletResponse, authentication);
+        SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
+        logoutHandler.setSecurityContextRepository(securityContextRepository);
+        logoutHandler.logout(servletRequest, servletResponse, authentication);
         return ResponseEntity.noContent().build();
     }
 }

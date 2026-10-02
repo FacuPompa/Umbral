@@ -24,6 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.anonymous;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -61,9 +62,12 @@ class JournalEntryControllerTest {
         mockMvc.perform(get("/api/games/{gameId}/journal-entries", persona5Royal.getId())
                         .with(user("umbral-demo")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].checkpointLabel").value("Palacio de Madarame"))
-                .andExpect(jsonPath("$[0].type").value("REFLECTION"));
+                .andExpect(jsonPath("$.items", hasSize(1)))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.hasNext").value(false))
+                .andExpect(jsonPath("$.items[0].checkpointLabel").value("Palacio de Madarame"))
+                .andExpect(jsonPath("$.items[0].type").value("REFLECTION"));
     }
 
     @Test
@@ -157,6 +161,62 @@ class JournalEntryControllerTest {
                 .filter(game -> game.getTitle().equals("Persona 5 Royal"))
                 .findFirst()
                 .orElseThrow();
+    }
+
+    @Test
+    void supportsTypeFilteringAndAnEmptyFilteredFeed() throws Exception {
+        Game game = findPersona5Royal();
+        saveProgressForDemoUser(game, checkpointRepository.findByGameIdOrderByPositionAsc(game.getId()).get(6));
+        mockMvc.perform(get("/api/games/{id}/journal-entries", game.getId()).with(user("umbral-demo"))
+                        .param("type", "THEORY").param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items", hasSize(1)))
+                .andExpect(jsonPath("$.items[0].type").value("THEORY"))
+                .andExpect(jsonPath("$.hasNext").value(false));
+        mockMvc.perform(get("/api/games/{id}/journal-entries", game.getId()).with(user("umbral-demo")).param("type", "QUESTION"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items", hasSize(0)))
+                .andExpect(jsonPath("$.hasNext").value(false));
+    }
+
+    @Test
+    void supportsAscendingOrderAndSubsequentPages() throws Exception {
+        Game game = findPersona5Royal();
+        saveProgressForDemoUser(game, checkpointRepository.findByGameIdOrderByPositionAsc(game.getId()).get(6));
+        mockMvc.perform(get("/api/games/{id}/journal-entries", game.getId()).with(user("umbral-demo")).param("order", "ASC").param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].checkpointLabel").value("Palacio de Madarame"))
+                .andExpect(jsonPath("$.hasNext").value(true));
+        mockMvc.perform(get("/api/games/{id}/journal-entries", game.getId()).with(user("umbral-demo"))
+                        .param("order", "ASC").param("size", "1").param("page", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].type").value("THEORY"))
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.hasNext").value(false));
+    }
+
+    @Test
+    void rejectsInvalidFeedParameters() throws Exception {
+        Long gameId = findPersona5Royal().getId();
+        String[][] invalid = {{"page", "-1"}, {"page", "10001"}, {"size", "0"}, {"size", "51"},
+                {"type", "INVALID"}, {"order", "INVALID"}, {"page", "abc"}};
+        for (String[] parameter : invalid) {
+            mockMvc.perform(get("/api/games/{id}/journal-entries", gameId).with(user("umbral-demo")).param(parameter[0], parameter[1]))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Test
+    void returnsEmptyPageWithoutProgressAndRequiresAuthentication() throws Exception {
+        Long gameId = findPersona5Royal().getId();
+        mockMvc.perform(get("/api/games/{id}/journal-entries", gameId).with(user("umbral-demo")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items", hasSize(0)))
+                .andExpect(jsonPath("$.hasNext").value(false));
+        mockMvc.perform(get("/api/games/{id}/journal-entries", gameId).with(anonymous()))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/games/{id}/journal-entries", Long.MAX_VALUE).with(user("umbral-demo")))
+                .andExpect(status().isNotFound());
     }
 
     private void saveProgressForDemoUser(Game game, Checkpoint checkpoint) {
