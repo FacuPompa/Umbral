@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import LoadingIndicator from '../../components/LoadingIndicator';
+import ContentLoading from '@/components/ContentLoading';
 import { useAuth } from '../auth/useAuth';
 import {
   fetchCurrentUserLibrary,
@@ -15,7 +16,7 @@ import PageHeading from '@/components/PageHeading';
 import LibraryGameRow from './LibraryGameRow';
 import StatusMessage from '@/components/StatusMessage';
 import { Button } from '@/components/ui/button';
-import { libraryStatusOptions } from './libraryLabels';
+import { libraryStatusLabels, libraryStatusOptions } from './libraryLabels';
 
 const loadLayoutFeatures = () => import('@/lib/motionLayoutFeatures').then((module) => module.default);
 
@@ -37,6 +38,7 @@ export default function LibraryPage() {
   const [loading, setLoading] = useState(true);
   const [workingGameId, setWorkingGameId] = useState(null);
   const [error, setError] = useState(null);
+  const [notice, setNotice] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -76,9 +78,11 @@ export default function LibraryPage() {
     if (workingGameId !== null) return;
     setWorkingGameId(gameId);
     setError(null);
+    setNotice(null);
     try {
       const updatedGame = await updateCurrentUserLibraryGameStatus(gameId, status);
       setLibrary((currentLibrary) => currentLibrary.map((game) => game.gameId === gameId ? updatedGame : game));
+      setNotice(`${updatedGame.gameTitle}: estado actualizado a «${libraryStatusLabels[updatedGame.status]}».`);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -90,9 +94,11 @@ export default function LibraryPage() {
     if (workingGameId !== null) return;
     setWorkingGameId(game.gameId);
     setError(null);
+    setNotice(null);
     try {
       const updatedGame = await updateCurrentUserLibraryGameFavorite(game.gameId, !game.favorite);
       setLibrary((currentLibrary) => currentLibrary.map((item) => item.gameId === game.gameId ? updatedGame : item));
+      setNotice(updatedGame.favorite ? `${updatedGame.gameTitle} se agregó a tus favoritos.` : `${updatedGame.gameTitle} se quitó de tus favoritos.`);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -105,10 +111,12 @@ export default function LibraryPage() {
     const game = pendingRemoval;
     setWorkingGameId(game.gameId);
     setRemoveError(null);
+    setNotice(null);
     try {
       await removeGameFromCurrentUserLibrary(game.gameId);
       setLibrary((currentLibrary) => currentLibrary.filter((item) => item.gameId !== game.gameId));
       setPendingRemoval(null);
+      setNotice(`${game.gameTitle} se quitó de tu biblioteca. Tu progreso y tus publicaciones se conservan.`);
     } catch (requestError) {
       setRemoveError(requestError.message);
     } finally {
@@ -158,8 +166,9 @@ export default function LibraryPage() {
         </section>
       )}
 
-      {loading && <LoadingIndicator label="Cargando biblioteca" showLabel />}
+      {loading && <ContentLoading label="Cargando biblioteca" />}
       {error && <StatusMessage kind="error">{error}</StatusMessage>}
+      {notice && <StatusMessage kind="success">{notice}</StatusMessage>}
       {!loading && !error && library.length === 0 && (
         <section className="grid justify-items-start gap-4 py-4">
           <h2 className="text-2xl leading-[30px] font-semibold tracking-normal">Tu biblioteca está vacía</h2>
