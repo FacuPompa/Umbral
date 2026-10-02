@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchGames } from '../games/gameApi';
 import GameShelf from '../games/GameShelf';
-import LoadingIndicator from '@/components/LoadingIndicator';
+import ContentLoading from '@/components/ContentLoading';
 import StatusMessage from '@/components/StatusMessage';
 import { Button } from '@/components/ui/button';
 
@@ -26,7 +26,7 @@ export default function SearchDiscovery() {
         <h2 id="discovery-title" className="text-xl leading-7 font-semibold">Explorá el catálogo</h2>
         <p className="text-sm leading-5 text-muted-foreground">Podés empezar por un juego o buscar a alguien por su nombre de usuario.</p>
       </header>
-      {loading ? <LoadingIndicator label="Cargando juegos para explorar" showLabel /> : error ? (
+      {loading ? <ContentLoading label="Cargando juegos para explorar" variant="shelf" /> : error ? (
         <div className="grid justify-items-start gap-3">
           <StatusMessage kind="error">No pudimos cargar los juegos para explorar. Podés seguir usando el buscador.</StatusMessage>
           <Button variant="outline" onClick={() => { setLoading(true); setError(false); setAttempt((value) => value + 1); }}>Reintentar catálogo</Button>

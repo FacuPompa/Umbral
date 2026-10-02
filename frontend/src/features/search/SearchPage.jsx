@@ -7,6 +7,7 @@ import SearchForm from '@/components/SearchForm';
 import GameRow from '@/components/GameRow';
 import InitialAvatar from '@/components/InitialAvatar';
 import StatusMessage from '@/components/StatusMessage';
+import ContentLoading from '@/components/ContentLoading';
 import { searchCatalogAndUsers } from '../games/gameApi';
 import SearchDiscovery from './SearchDiscovery';
 
@@ -61,6 +62,7 @@ function SearchContent({ urlQuery, onSearch }) {
       <SearchForm query={query} onQueryChange={setQuery} onSubmit={submitSearch} loading={loading}
         label="Título de juego o nombre de usuario" hint="Escribí al menos dos caracteres. Mostramos hasta cinco resultados de cada grupo." />
       {error && <StatusMessage kind="error">{error}</StatusMessage>}
+      {loading && <ContentLoading label="Cargando resultados" />}
       {!searched && <SearchDiscovery />}
       {!loading && !error && searched && !hasResults && <StatusMessage>No encontramos juegos ni personas con “{normalized}”.</StatusMessage>}
       {!loading && !error && hasResults && (

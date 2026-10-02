@@ -5,6 +5,7 @@ import LibrarySummary from '@/components/LibrarySummary';
 import StatusMessage from '@/components/StatusMessage';
 import { Button } from '@/components/ui/button';
 import LoadingIndicator from '../../components/LoadingIndicator';
+import ContentLoading from '@/components/ContentLoading';
 import { useAuth } from '../auth/useAuth';
 import { fetchCurrentUserLibrary } from '../games/gameApi';
 import ProfileFavorites from './ProfileFavorites';
@@ -54,7 +55,7 @@ export default function ProfilePage() {
         <Button asChild><Link to="/me/library">Ver mi biblioteca</Link></Button>
         <Button asChild variant="outline"><Link to={`/users/${encodeURIComponent(user.handle)}`}>Ver perfil público</Link></Button>
       </ProfileIdentity>
-      {loading && <LoadingIndicator label="Cargando perfil" showLabel />}
+      {loading && <ContentLoading label="Cargando perfil" variant="profile" />}
       {error && <StatusMessage kind="error">{error}</StatusMessage>}
       {!loading && !error && (
         <>

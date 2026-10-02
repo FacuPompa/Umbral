@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import LoadingIndicator from '../../components/LoadingIndicator';
+import ContentLoading from '@/components/ContentLoading';
 import { useAuth } from '../auth/useAuth';
 import {
   fetchCurrentUserLibrary,
@@ -158,7 +159,7 @@ export default function LibraryPage() {
         </section>
       )}
 
-      {loading && <LoadingIndicator label="Cargando biblioteca" showLabel />}
+      {loading && <ContentLoading label="Cargando biblioteca" />}
       {error && <StatusMessage kind="error">{error}</StatusMessage>}
       {!loading && !error && library.length === 0 && (
         <section className="grid justify-items-start gap-4 py-4">

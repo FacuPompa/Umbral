@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import LoadingIndicator from '../../components/LoadingIndicator';
+import ContentLoading from '@/components/ContentLoading';
 import { fetchPublicProfile } from '../games/gameApi';
 import ProfileIdentity from '@/components/ProfileIdentity';
 import LibrarySummary from '@/components/LibrarySummary';
@@ -39,7 +39,7 @@ function PublicProfile({ handle }) {
     return () => { active = false; };
   }, [handle]);
 
-  if (loading) return <main className="py-12" id="main-content"><LoadingIndicator label="Cargando perfil público" showLabel /></main>;
+  if (loading) return <main className="w-full max-w-[840px] py-8 md:py-12" id="main-content"><ContentLoading label="Cargando perfil público" variant="profile" showIdentity /></main>;
   if (error || !profile) return (
     <main className="grid max-w-[840px] gap-6 py-12" id="main-content">
       <PageHeading title="Perfil no disponible" />
