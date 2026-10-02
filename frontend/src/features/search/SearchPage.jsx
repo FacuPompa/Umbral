@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
@@ -27,6 +27,8 @@ function SearchContent({ urlQuery, onSearch }) {
   const [loading, setLoading] = useState(searched);
   const [error, setError] = useState(null);
   const [attempt, setAttempt] = useState(0);
+  const [selectedGroup, setSelectedGroup] = useState('games');
+  const tabs = useRef({});
   const reduced = useReducedMotion();
 
   useEffect(() => {
@@ -57,6 +59,16 @@ function SearchContent({ urlQuery, onSearch }) {
   }
 
   const hasResults = results && (results.games.length > 0 || results.users.length > 0);
+  const hasBothGroups = results && results.games.length > 0 && results.users.length > 0;
+
+  function handleTabKey(event) {
+    const next = event.key === 'Home' ? 'games' : event.key === 'End' ? 'users'
+      : ['ArrowLeft', 'ArrowRight'].includes(event.key) ? (selectedGroup === 'games' ? 'users' : 'games') : null;
+    if (!next) return;
+    event.preventDefault();
+    setSelectedGroup(next);
+    tabs.current[next]?.focus();
+  }
   return (
     <main className="grid w-full max-w-[840px] gap-8 py-8 md:gap-10 md:py-12" id="main-content">
       <PageHeading title="Buscar" description="Encontrá juegos del catálogo y perfiles de la comunidad." />
@@ -76,17 +88,33 @@ function SearchContent({ urlQuery, onSearch }) {
       )}
       {!loading && !error && hasResults && (
         <m.div className="grid gap-10" initial={{ opacity: reduced ? 1 : 0 }} animate={{ opacity: 1 }} transition={{ duration: reduced ? 0 : 0.12 }}>
+          {hasBothGroups && (
+            <div role="tablist" aria-label="Grupos de resultados" className="flex border-b border-border">
+              {[[ 'games', 'Juegos', results.games.length ], [ 'users', 'Personas', results.users.length ]].map(([group, label, count]) => (
+                <button key={group} type="button" role="tab" id={`search-tab-${group}`} aria-controls={`search-panel-${group}`}
+                  aria-selected={selectedGroup === group} tabIndex={selectedGroup === group ? 0 : -1}
+                  ref={(element) => { tabs.current[group] = element; }} onClick={() => setSelectedGroup(group)} onKeyDown={handleTabKey}
+                  className="flex min-h-11 items-center gap-3 border-b-2 border-transparent px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground aria-selected:border-primary aria-selected:text-foreground">
+                  {label}<span className="tabular-nums">{count}</span>
+                </button>
+              ))}
+            </div>
+          )}
           {results.games.length > 0 && (
-            <section className="grid gap-5" aria-labelledby="search-games-title">
-              <h2 className="text-2xl leading-[30px] font-semibold tracking-normal" id="search-games-title">Juegos</h2>
+            <section className="grid gap-5" hidden={hasBothGroups && selectedGroup !== 'games'}
+              role={hasBothGroups ? 'tabpanel' : undefined} id="search-panel-games" tabIndex={hasBothGroups ? 0 : undefined}
+              aria-labelledby={hasBothGroups ? 'search-tab-games' : 'search-games-title'}>
+              {!hasBothGroups && <h2 className="text-2xl leading-[30px] font-semibold tracking-normal" id="search-games-title">Juegos</h2>}
               <ol className="border-t border-border">
-                {results.games.map((game) => <li key={game.id}><GameRow gameId={game.id} title={game.title} description={game.description} coverImageUrl={game.coverImageUrl} /></li>)}
+                {results.games.map((game) => <li key={game.id} className="[&_p]:line-clamp-2"><GameRow gameId={game.id} title={game.title} description={game.description} coverImageUrl={game.coverImageUrl} /></li>)}
               </ol>
             </section>
           )}
           {results.users.length > 0 && (
-            <section className="grid gap-5" aria-labelledby="search-users-title">
-              <h2 className="text-2xl leading-[30px] font-semibold tracking-normal" id="search-users-title">Personas</h2>
+            <section className="grid gap-5" hidden={hasBothGroups && selectedGroup !== 'users'}
+              role={hasBothGroups ? 'tabpanel' : undefined} id="search-panel-users" tabIndex={hasBothGroups ? 0 : undefined}
+              aria-labelledby={hasBothGroups ? 'search-tab-users' : 'search-users-title'}>
+              {!hasBothGroups && <h2 className="text-2xl leading-[30px] font-semibold tracking-normal" id="search-users-title">Personas</h2>}
               <ol className="border-t border-border">
                 {results.users.map((user) => (
                   <li key={user.handle} className="border-b border-border">
