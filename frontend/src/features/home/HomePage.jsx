@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button';
 import SpoilerBoundaryDemo from './SpoilerBoundaryDemo';
 import ConversationFormats from './ConversationFormats';
 import { useAuth } from '../auth/useAuth';
+import { getGameArtwork } from '../games/gameArtwork';
+
+const MAX_FEATURED_GAMES = 4;
 
 export default function HomePage() {
   const { user, loading: authLoading } = useAuth();
@@ -17,6 +20,7 @@ export default function HomePage() {
   const [error, setError] = useState(null);
   const [isSlowToLoad, setIsSlowToLoad] = useState(false);
   const [requestVersion, setRequestVersion] = useState(0);
+  const featuredGames = games.filter((game) => game.coverImageUrl || getGameArtwork(game.title)).slice(0, MAX_FEATURED_GAMES);
 
   useEffect(() => {
     let isActive = true;
@@ -69,7 +73,7 @@ export default function HomePage() {
         <div className="min-w-0 overflow-hidden rounded-lg bg-muted">
           {loading && !isSlowToLoad && <div className="grid min-h-[400px] place-items-center"><LoadingIndicator label="Cargando catálogo" showLabel /></div>}
           {(isSlowToLoad || error) && <div className="grid min-h-[400px] place-items-center p-6"><BackendWakeupNotice onRetry={retryCatalog} retrying={loading} /></div>}
-          {!loading && !error && (games.length > 0 ? <HeroGameCarousel games={games} /> : <p className="grid min-h-[400px] place-items-center p-6 text-base text-muted-foreground">El catálogo todavía no tiene juegos.</p>)}
+          {!loading && !error && (games.length > 0 ? <HeroGameCarousel games={featuredGames.length > 0 ? featuredGames : games.slice(0, MAX_FEATURED_GAMES)} /> : <p className="grid min-h-[400px] place-items-center p-6 text-base text-muted-foreground">El catálogo todavía no tiene juegos.</p>)}
         </div>
       </section>
 
