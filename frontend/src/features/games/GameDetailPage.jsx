@@ -9,7 +9,6 @@ import {
   fetchCurrentUserLibrary,
   fetchGameProgress,
   fetchGames,
-  fetchJournalEntries,
   fetchJournalReplies,
   submitCheckpointSuggestion,
   updateGameProgress,
@@ -21,6 +20,7 @@ import EntryComposer from './EntryComposer';
 import PublicationAuthor from './PublicationAuthor';
 import SignedOutGate from './SignedOutGate';
 import { entryTypeLabels } from './journalEntryTypes';
+import { useJournalFeed } from './useJournalFeed';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/field';
 import GameArtwork from '@/components/GameArtwork';
@@ -57,9 +57,8 @@ export default function GameDetailPage() {
   const [savingCheckpointSuggestion, setSavingCheckpointSuggestion] = useState(false);
   const [checkpointSuggestionError, setCheckpointSuggestionError] = useState(null);
   const [checkpointSuggestionNotice, setCheckpointSuggestionNotice] = useState(null);
-  const [journalEntries, setJournalEntries] = useState([]);
-  const [loadingJournalEntries, setLoadingJournalEntries] = useState(false);
-  const [journalEntriesError, setJournalEntriesError] = useState(null);
+  const journalFeed = useJournalFeed(game?.id, user?.handle);
+  const { entries: journalEntries, loading: loadingJournalEntries, error: journalEntriesError } = journalFeed;
   const [entryCheckpointId, setEntryCheckpointId] = useState('');
   const [entryType, setEntryType] = useState('');
   const [entryContent, setEntryContent] = useState('');
@@ -85,7 +84,6 @@ export default function GameDetailPage() {
       setProgress(null);
       setLibraryEntry(null);
       setCheckpoints([]);
-      setJournalEntries([]);
       setOpenRepliesEntryId(null);
       setRepliesByEntryId({});
 
@@ -121,45 +119,34 @@ export default function GameDetailPage() {
 
   useEffect(() => {
     if (!game) return;
-
-    loadCheckpoints(game.id);
-
-    if (user) {
-      loadJournalEntries(game.id);
+    let active = true;
+    async function loadCheckpoints() {
+      setLoadingCheckpoints(true);
+      setCheckpointsError(null);
+      try {
+        const checkpointsFromApi = await fetchCheckpoints(game.id);
+        if (!active) return;
+        setCheckpoints(checkpointsFromApi);
+        setCheckpointSuggestionPosition(String(
+          Math.max(0, ...checkpointsFromApi.map((checkpoint) => checkpoint.position)) + 1,
+        ));
+      } catch (requestError) {
+        if (active) setCheckpointsError(requestError.message);
+      } finally {
+        if (active) setLoadingCheckpoints(false);
+      }
     }
-  }, [game, user]);
+    loadCheckpoints();
+    return () => { active = false; };
+  }, [game]);
 
-  async function loadCheckpoints(id) {
-    setLoadingCheckpoints(true);
-    setCheckpointsError(null);
-    try {
-      const checkpointsFromApi = await fetchCheckpoints(id);
-      setCheckpoints(checkpointsFromApi);
-      setCheckpointSuggestionPosition(String(
-        Math.max(0, ...checkpointsFromApi.map((checkpoint) => checkpoint.position)) + 1,
-      ));
-    } catch (requestError) {
-      setCheckpointsError(requestError.message);
-    } finally {
-      setLoadingCheckpoints(false);
-    }
-  }
-
-  async function loadJournalEntries(id) {
-    setLoadingJournalEntries(true);
-    setJournalEntriesError(null);
+  function refreshJournalEntries() {
+    journalFeed.refresh();
     setOpenRepliesEntryId(null);
     setRepliesByEntryId({});
     setRepliesError(null);
     setReplyContent('');
     setSavingReplyError(null);
-    try {
-      setJournalEntries(await fetchJournalEntries(id));
-    } catch (requestError) {
-      setJournalEntriesError(requestError.message);
-    } finally {
-      setLoadingJournalEntries(false);
-    }
   }
 
   function requestCheckpointChange(checkpoint) {
@@ -181,10 +168,10 @@ export default function GameDetailPage() {
     try {
       const savedProgress = await updateGameProgress(game.id, pendingCheckpoint.id);
       setProgress(savedProgress);
+      refreshJournalEntries();
       setEntryCheckpointId(String(savedProgress.checkpointId));
       const library = await fetchCurrentUserLibrary();
       setLibraryEntry(library.find((entry) => entry.gameId === game.id) ?? null);
-      await loadJournalEntries(game.id);
       setPendingCheckpoint(null);
     } catch (requestError) {
       setSavingProgressError(requestError.message);
@@ -240,7 +227,7 @@ export default function GameDetailPage() {
       await createJournalEntry(Number(entryCheckpointId), entryType, entryContent);
       setEntryType('');
       setEntryContent('');
-      await loadJournalEntries(game.id);
+      refreshJournalEntries();
     } catch (requestError) {
       setSavingEntryError(requestError.message);
     } finally {
@@ -413,12 +400,31 @@ export default function GameDetailPage() {
               <h2 id="journal-title">Conversaciones que ya podés leer</h2>
               <p>Conversaciones de tu tramo y de los anteriores.</p>
             </header>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="grid gap-2 text-sm font-medium">
+                Tipo de publicación
+                <select className="min-h-11 min-w-0 rounded-md border border-input bg-popover px-3 py-2 text-base text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                  value={journalFeed.type} onChange={(event) => journalFeed.setType(event.target.value)}>
+                  <option value="">Todas las publicaciones</option>
+                  {Object.entries(entryTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </label>
+              <label className="grid gap-2 text-sm font-medium">
+                Ordenar por
+                <select className="min-h-11 min-w-0 rounded-md border border-input bg-popover px-3 py-2 text-base text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                  value={journalFeed.order} onChange={(event) => journalFeed.setOrder(event.target.value)}>
+                  <option value="DESC">Más recientes primero</option>
+                  <option value="ASC">Más antiguas primero</option>
+                </select>
+              </label>
+            </div>
             {user && loadingJournalEntries && <LoadingIndicator label="Cargando entradas" showLabel />}
             {user && journalEntriesError && <StatusMessage kind="error">{journalEntriesError}</StatusMessage>}
+            {journalEntriesError && journalEntries.length === 0 && <Button variant="outline" className="w-fit" onClick={refreshJournalEntries}>Reintentar</Button>}
             {user && !loadingJournalEntries && !journalEntriesError && journalEntries.length === 0 && (
-              <StatusMessage>Por ahora no hay nada que podamos mostrarte sin spoilearte. Volvé cuando avances un poco más.</StatusMessage>
+              <StatusMessage>{journalFeed.type ? 'No hay publicaciones de este tipo disponibles para tu progreso. Probá con otro filtro.' : 'Por ahora no hay nada que podamos mostrarte sin spoilearte. Volvé cuando avances un poco más.'}</StatusMessage>
             )}
-            {user && !loadingJournalEntries && !journalEntriesError && journalEntries.length > 0 && (
+            {user && !loadingJournalEntries && journalEntries.length > 0 && (
               <ol className="border-t border-border">
                 {journalEntries.map((entry) => {
                   const isRepliesOpen = openRepliesEntryId === entry.id;
@@ -490,6 +496,11 @@ export default function GameDetailPage() {
                   );
                 })}
               </ol>
+            )}
+            {!loadingJournalEntries && journalFeed.hasNext && (
+              <Button variant="outline" className="w-fit" disabled={journalFeed.loadingMore} onClick={journalFeed.loadMore}>
+                {journalFeed.loadingMore ? <LoadingIndicator label="Cargando más publicaciones" showLabel /> : journalEntriesError ? 'Reintentar cargar más' : 'Cargar más publicaciones'}
+              </Button>
             )}
           </section>
           </>}

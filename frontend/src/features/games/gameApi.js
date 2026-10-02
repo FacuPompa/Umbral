@@ -53,8 +53,10 @@ export function updateGameProgress(gameId, checkpointId) {
   return sendJson(`/api/me/games/${gameId}/progress`, 'PUT', { checkpointId }, 'No se pudo guardar el progreso.');
 }
 
-export function fetchJournalEntries(gameId) {
-  return getJson(`/api/games/${gameId}/journal-entries`, 'No se pudo cargar la bitácora.');
+export function fetchJournalEntries(gameId, { page = 0, type = '', order = 'DESC' } = {}) {
+  const params = new URLSearchParams({ page, size: 10, order });
+  if (type) params.set('type', type);
+  return getJson(`/api/games/${gameId}/journal-entries?${params}`, 'No se pudo cargar la bitácora.');
 }
 
 export function createJournalEntry(checkpointId, type, content) {

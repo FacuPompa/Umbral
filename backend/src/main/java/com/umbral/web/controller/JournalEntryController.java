@@ -2,13 +2,16 @@ package com.umbral.web.controller;
 
 import com.umbral.domain.dto.CreateJournalEntryRequest;
 import com.umbral.domain.dto.JournalEntryResponse;
+import com.umbral.domain.dto.JournalEntryFeedResponse;
+import com.umbral.domain.entity.JournalEntryType;
+import org.springframework.data.domain.Sort;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
 import com.umbral.domain.service.JournalEntryService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -31,11 +34,15 @@ public class JournalEntryController {
     }
 
     @GetMapping("/games/{gameId}/journal-entries")
-    public ResponseEntity<List<JournalEntryResponse>> getJournalEntries(
-            @PathVariable Long gameId
+    public ResponseEntity<JournalEntryFeedResponse> getJournalEntries(
+            @PathVariable Long gameId,
+            @RequestParam(required = false) JournalEntryType type,
+            @RequestParam(defaultValue = "0") @Min(0) @Max(10000) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(50) int size,
+            @RequestParam(defaultValue = "DESC") Sort.Direction order
     ) {
-        List<JournalEntryResponse> entries = journalEntryService
-                .getVisibleEntriesForCurrentUser(gameId);
+        JournalEntryFeedResponse entries = journalEntryService
+                .getVisibleEntriesForCurrentUser(gameId, type, page, size, order);
 
         return ResponseEntity.ok(entries);
     }

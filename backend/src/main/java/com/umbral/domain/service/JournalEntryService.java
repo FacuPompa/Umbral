@@ -2,6 +2,10 @@ package com.umbral.domain.service;
 
 import com.umbral.domain.dto.CreateJournalEntryRequest;
 import com.umbral.domain.dto.JournalEntryResponse;
+import com.umbral.domain.dto.JournalEntryFeedResponse;
+import com.umbral.domain.entity.JournalEntryType;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import com.umbral.domain.entity.Checkpoint;
 import com.umbral.domain.entity.JournalEntry;
 import com.umbral.domain.entity.User;
@@ -14,8 +18,6 @@ import com.umbral.domain.repository.JournalEntryRepository;
 import com.umbral.domain.repository.UserGameProgressRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 public class JournalEntryService {
@@ -62,19 +64,23 @@ public class JournalEntryService {
     }
 
     @Transactional(readOnly = true)
-    public List<JournalEntryResponse> getVisibleEntriesForCurrentUser(Long gameId) {
+    public JournalEntryFeedResponse getVisibleEntriesForCurrentUser(
+            Long gameId, JournalEntryType type, int page, int size, Sort.Direction order
+    ) {
         User reader = currentUserResolver.getCurrentUser();
 
         gameRepository.findById(gameId)
                 .orElseThrow(() -> new ResourceNotFoundException("El juego no fue encontrado"));
 
-        return journalEntryRepository.findVisibleByReaderIdAndGameId(
+        var entries = journalEntryRepository.findVisibleByReaderIdAndGameId(
                 reader.getId(),
-                gameId
-        )
-                .stream()
-                .map(this::toResponse)
-                .toList();
+                gameId,
+                type,
+                PageRequest.of(page, size, Sort.by(order, "createdAt", "id"))
+        );
+        return new JournalEntryFeedResponse(
+                entries.map(this::toResponse).getContent(), page, size, entries.hasNext()
+        );
     }
 
     private JournalEntryResponse toResponse(JournalEntry entry) {

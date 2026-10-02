@@ -19,10 +19,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Sort;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @Import(PostgresTestConfiguration.class)
@@ -97,6 +100,32 @@ class JournalEntryServiceTest {
                 .filter(game -> game.getTitle().equals("Persona 5 Royal"))
                 .findFirst()
                 .orElseThrow();
+    }
+
+    @Test
+    void returnsFilteredPagesForTheCurrentReaderWithSafeMetadata() {
+        Game game = findPersona5Royal();
+        Checkpoint madarame = checkpointRepository.findByGameIdOrderByPositionAsc(game.getId()).get(2);
+        saveProgressForDemoUser(game, madarame);
+        var feed = journalEntryService.getVisibleEntriesForCurrentUser(
+                game.getId(), JournalEntryType.REFLECTION, 0, 1, Sort.Direction.ASC);
+        assertEquals(1, feed.items().size());
+        assertEquals("Palacio de Madarame", feed.items().getFirst().checkpointLabel());
+        assertEquals(JournalEntryType.REFLECTION, feed.items().getFirst().type());
+        assertEquals(0, feed.page());
+        assertEquals(1, feed.size());
+        assertFalse(feed.hasNext());
+    }
+
+    @Test
+    void returnsEmptySliceWhenTheRequestedTypeOnlyExistsBeyondReaderProgress() {
+        Game game = findPersona5Royal();
+        Checkpoint madarame = checkpointRepository.findByGameIdOrderByPositionAsc(game.getId()).get(2);
+        saveProgressForDemoUser(game, madarame);
+        var feed = journalEntryService.getVisibleEntriesForCurrentUser(
+                game.getId(), JournalEntryType.THEORY, 0, 1, Sort.Direction.DESC);
+        assertTrue(feed.items().isEmpty());
+        assertFalse(feed.hasNext());
     }
 
     private void saveProgressForDemoUser(Game game, Checkpoint checkpoint) {
