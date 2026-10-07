@@ -63,6 +63,10 @@ export function createJournalEntry(checkpointId, type, content) {
   return sendJson('/api/me/journal-entries', 'POST', { checkpointId, type, content }, 'No se pudo publicar la entrada.');
 }
 
+export function updateJournalEntry(entryId, type, content) {
+  return sendJson(`/api/me/journal-entries/${entryId}`, 'PATCH', { type, content }, 'No se pudo guardar la publicación. Tu texto sigue en el formulario.');
+}
+
 export function fetchJournalReplies(entryId) {
   return getJson(`/api/journal-entries/${entryId}/replies`, 'No se pudieron cargar las respuestas.');
 }

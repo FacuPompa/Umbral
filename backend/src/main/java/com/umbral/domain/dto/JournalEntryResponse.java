@@ -11,6 +11,7 @@ public record JournalEntryResponse(
         String checkpointLabel,
         JournalEntryType type,
         String content,
-        Instant createdAt
+        Instant createdAt,
+        Instant editedAt
 ) {
 }

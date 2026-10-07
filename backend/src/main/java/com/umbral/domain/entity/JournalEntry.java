@@ -30,6 +30,9 @@ public class JournalEntry {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "edited_at")
+    private Instant editedAt;
+
     protected JournalEntry(){}
 
     public JournalEntry(User author, Checkpoint checkpoint, JournalEntryType type, String content) {
@@ -62,5 +65,16 @@ public class JournalEntry {
 
     public JournalEntryType getType() {
         return type;
+    }
+
+    public Instant getEditedAt() {
+        return editedAt;
+    }
+
+    public void update(JournalEntryType type, String content) {
+        if (this.type == type && this.content.equals(content)) return;
+        this.type = type;
+        this.content = content;
+        this.editedAt = Instant.now();
     }
 }

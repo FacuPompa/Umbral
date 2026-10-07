@@ -3,6 +3,7 @@ package com.umbral.domain.service;
 import com.umbral.domain.dto.CreateJournalEntryRequest;
 import com.umbral.domain.dto.JournalEntryResponse;
 import com.umbral.domain.dto.JournalEntryFeedResponse;
+import com.umbral.domain.dto.UpdateJournalEntryRequest;
 import com.umbral.domain.entity.JournalEntryType;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -63,6 +64,21 @@ public class JournalEntryService {
         return toResponse(savedEntry);
     }
 
+    @Transactional
+    public JournalEntryResponse updateCurrentUserEntry(Long entryId, UpdateJournalEntryRequest request) {
+        User author = currentUserResolver.getCurrentUser();
+        JournalEntry entry = journalEntryRepository.findByIdAndAuthorId(entryId, author.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("La publicación no está disponible."));
+        UserGameProgress progress = userGameProgressRepository
+                .findByUserIdAndGameId(author.getId(), entry.getCheckpoint().getGame().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("La publicación no está disponible."));
+        if (progress.getCheckpoint().getPosition() < entry.getCheckpoint().getPosition()) {
+            throw new ResourceNotFoundException("La publicación no está disponible.");
+        }
+        entry.update(request.type(), request.content());
+        return toResponse(entry);
+    }
+
     @Transactional(readOnly = true)
     public JournalEntryFeedResponse getVisibleEntriesForCurrentUser(
             Long gameId, JournalEntryType type, int page, int size, Sort.Direction order
@@ -91,7 +107,8 @@ public class JournalEntryService {
                 entry.getCheckpoint().getLabel(),
                 entry.getType(),
                 entry.getContent(),
-                entry.getCreatedAt()
+                entry.getCreatedAt(),
+                entry.getEditedAt()
         );
     }
 }
