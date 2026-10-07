@@ -3,6 +3,7 @@ package com.umbral.web.controller;
 import com.umbral.domain.dto.CreateJournalEntryRequest;
 import com.umbral.domain.dto.JournalEntryResponse;
 import com.umbral.domain.dto.JournalEntryFeedResponse;
+import com.umbral.domain.dto.UpdateJournalEntryRequest;
 import com.umbral.domain.entity.JournalEntryType;
 import org.springframework.data.domain.Sort;
 import jakarta.validation.constraints.Min;
@@ -31,6 +32,14 @@ public class JournalEntryController {
                 .createCurrentUserEntry(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(entry);
+    }
+
+    @PatchMapping("/me/journal-entries/{entryId}")
+    public ResponseEntity<JournalEntryResponse> updateJournalEntry(
+            @PathVariable Long entryId,
+            @Valid @RequestBody UpdateJournalEntryRequest request
+    ) {
+        return ResponseEntity.ok(journalEntryService.updateCurrentUserEntry(entryId, request));
     }
 
     @GetMapping("/games/{gameId}/journal-entries")

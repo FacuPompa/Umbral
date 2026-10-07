@@ -17,6 +17,7 @@ import { getGameArtwork } from './gameArtwork';
 import { ArrowLeft, MessageCircle, Plus } from 'lucide-react';
 import CheckpointRail from './CheckpointRail';
 import EntryComposer from './EntryComposer';
+import EntryEditor from './EntryEditor';
 import PublicationAuthor from './PublicationAuthor';
 import SignedOutGate from './SignedOutGate';
 import { entryTypeLabels } from './journalEntryTypes';
@@ -38,6 +39,7 @@ const libraryStatusLabels = {
 export default function GameDetailPage() {
   const { gameId } = useParams();
   const mainRef = useRef(null);
+  const journalHeadingRef = useRef(null);
   const location = useLocation();
   const { user, loading: loadingUser } = useAuth();
   const [game, setGame] = useState(null);
@@ -64,6 +66,7 @@ export default function GameDetailPage() {
   const [entryContent, setEntryContent] = useState('');
   const [savingEntry, setSavingEntry] = useState(false);
   const [savingEntryError, setSavingEntryError] = useState(null);
+  const [editedNoticeKey, setEditedNoticeKey] = useState(null);
   const [openRepliesEntryId, setOpenRepliesEntryId] = useState(null);
   const [repliesByEntryId, setRepliesByEntryId] = useState({});
   const [loadingRepliesEntryId, setLoadingRepliesEntryId] = useState(null);
@@ -397,9 +400,10 @@ export default function GameDetailPage() {
 
           <section className="grid gap-6 border-t border-border pt-8" aria-labelledby="journal-title">
             <header className="grid gap-3 [&_h2]:text-2xl [&_h2]:leading-[30px] [&_h2]:font-semibold [&_h2]:tracking-normal [&_p]:text-base [&_p]:leading-6 [&_p]:text-muted-foreground">
-              <h2 id="journal-title">Conversaciones que ya podés leer</h2>
+              <h2 id="journal-title" ref={journalHeadingRef} tabIndex={-1}>Conversaciones que ya podés leer</h2>
               <p>Conversaciones de tu tramo y de los anteriores.</p>
             </header>
+            {editedNoticeKey === `${gameId}:${user?.handle}` && <StatusMessage kind="success">Cambios guardados.</StatusMessage>}
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium">
                 Tipo de publicación
@@ -435,13 +439,18 @@ export default function GameDetailPage() {
                     <li key={entry.id} className="min-w-0 border-b border-border py-8">
                       <article className="grid min-w-0 gap-5" aria-label={`${entryTypeLabels[entry.type] ?? entry.type} de ${entry.authorHandle}`}>
                       <header className="grid gap-3">
-                        <PublicationAuthor handle={entry.authorHandle} createdAt={entry.createdAt} />
+                        <PublicationAuthor handle={entry.authorHandle} createdAt={entry.createdAt} editedAt={entry.editedAt} />
                         <div className="grid gap-1 border-l-2 border-primary pl-3">
                           <p className="text-sm font-medium text-foreground">{entryTypeLabels[entry.type] ?? entry.type}</p>
                           <p className="break-words text-sm leading-5 text-muted-foreground">Hasta {entry.checkpointLabel}</p>
                         </div>
                       </header>
                       <p className="whitespace-pre-wrap break-words text-[17px] leading-[27px] text-foreground sm:text-lg sm:leading-[29px]">{entry.content}</p>
+                      {entry.authorHandle === user.handle && <EntryEditor entry={entry} onSaved={() => {
+                        setEditedNoticeKey(`${gameId}:${user.handle}`);
+                        refreshJournalEntries();
+                        journalHeadingRef.current?.focus({ preventScroll: true });
+                      }} />}
                       <Button
                         variant="ghost" className="w-fit px-0"
                         type="button"

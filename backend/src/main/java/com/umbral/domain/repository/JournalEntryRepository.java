@@ -8,8 +8,12 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.util.Optional;
 
 public interface JournalEntryRepository extends JpaRepository<JournalEntry, Long> {
+
+    @EntityGraph(attributePaths = {"author", "checkpoint", "checkpoint.game"})
+    Optional<JournalEntry> findByIdAndAuthorId(Long id, Long authorId);
 
     @EntityGraph(attributePaths = {"author", "checkpoint", "checkpoint.game"})
     @Query("""
