@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
 
 @Service
 public class GameSuggestionService {
@@ -36,6 +37,16 @@ public class GameSuggestionService {
         this.gameSuggestionRepository = gameSuggestionRepository;
         this.gameRepository = gameRepository;
         this.currentUserResolver = currentUserResolver;
+    }
+
+    @Transactional(readOnly = true)
+    public SuggestionPageResponse<GameSuggestionResponse> getCurrentUserSuggestions(
+            GameSuggestionStatus status, int page, int size
+    ) {
+        User user = currentUserResolver.getCurrentUser();
+        var suggestions = gameSuggestionRepository.findOwnSuggestions(user.getId(), status, PageRequest.of(page, size));
+        return new SuggestionPageResponse<>(suggestions.getContent().stream().map(this::toResponse).toList(),
+                page, size, suggestions.hasNext());
     }
 
     @Transactional(readOnly = true)

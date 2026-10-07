@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import { useAuth } from '../auth/useAuth';
 import { searchExternalGames, submitGameSuggestion } from './gameApi';
@@ -96,7 +96,7 @@ export default function GameSuggestionPage() {
         </Field>
       </form>
 
-      {notice && <StatusMessage kind="success">{notice}</StatusMessage>}
+      {notice && <StatusMessage kind="success">{notice} <Link className="underline underline-offset-4" to="/me/suggestions">Ver mis propuestas</Link></StatusMessage>}
       {error && <StatusMessage kind="error">{error}</StatusMessage>}
       {!searching && hasSearched && results.length === 0 && !notice && !error && (
         <StatusMessage>No encontramos ediciones con ese nombre. Probá con otro título.</StatusMessage>

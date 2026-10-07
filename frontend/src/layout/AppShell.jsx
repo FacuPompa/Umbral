@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { BookOpen, Search, Menu, Sun, Moon, UserRound, Library, ChevronDown, LogOut, Plus, ShieldCheck, ExternalLink, LoaderCircle, TriangleAlert } from 'lucide-react';
+import { BookOpen, Search, Menu, Sun, Moon, UserRound, Library, ChevronDown, LogOut, Plus, ShieldCheck, ExternalLink, LoaderCircle, TriangleAlert, ClipboardList } from 'lucide-react';
 import { useAuth } from '../features/auth/useAuth';
 import InitialAvatar from '@/components/InitialAvatar';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ function accountLinks(user) {
   return [
     { label: 'Mi perfil', to: '/me', icon: UserRound },
     { label: 'Mi biblioteca', to: '/me/library', icon: Library },
+    { label: 'Mis propuestas', to: '/me/suggestions', icon: ClipboardList },
     { label: 'Ver perfil público', to: `/users/${encodeURIComponent(user.handle)}`, icon: ExternalLink },
     { label: 'Sugerir juego', to: '/suggestions/new', icon: Plus },
     ...(user.role === 'MODERATOR' ? [{ label: 'Moderación', to: '/moderation/games', icon: ShieldCheck }] : []),
