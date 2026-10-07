@@ -2,6 +2,8 @@ package com.umbral.domain.service;
 
 import com.umbral.domain.dto.CheckpointSuggestionResponse;
 import com.umbral.domain.dto.CreateCheckpointSuggestionRequest;
+import com.umbral.domain.dto.SuggestionPageResponse;
+import org.springframework.data.domain.PageRequest;
 import com.umbral.domain.entity.*;
 import com.umbral.domain.exception.CheckpointPositionAlreadyExistsException;
 import com.umbral.domain.exception.CheckpointSuggestionAlreadyExistsException;
@@ -64,6 +66,16 @@ public class CheckpointSuggestionService {
         );
 
         return toResponse(checkpointSuggestionRepository.save(suggestion));
+    }
+
+    @Transactional(readOnly = true)
+    public SuggestionPageResponse<CheckpointSuggestionResponse> getCurrentUserSuggestions(
+            CheckpointSuggestionStatus status, int page, int size
+    ) {
+        User user = currentUserResolver.getCurrentUser();
+        var suggestions = checkpointSuggestionRepository.findOwnSuggestions(user.getId(), status, PageRequest.of(page, size));
+        return new SuggestionPageResponse<>(suggestions.getContent().stream().map(this::toResponse).toList(),
+                page, size, suggestions.hasNext());
     }
 
     @Transactional(readOnly = true)

@@ -79,6 +79,12 @@ export function submitGameSuggestion(rawgGameId) {
   return sendJson('/api/game-suggestions', 'POST', { rawgGameId }, 'No se pudo enviar la sugerencia.');
 }
 
+export function fetchMySuggestions(kind, { page = 0, status = '' } = {}) {
+  const params = new URLSearchParams({ page, size: 10 });
+  if (status) params.set('status', status);
+  return getJson(`/api/me/suggestions/${kind}?${params}`, 'No se pudieron cargar tus propuestas.');
+}
+
 export function fetchPendingGameSuggestions() {
   return getJson('/api/moderation/game-suggestions', 'No se pudieron cargar las sugerencias pendientes.');
 }

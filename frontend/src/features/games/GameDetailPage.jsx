@@ -374,7 +374,7 @@ export default function GameDetailPage() {
               >
                 {savingCheckpointSuggestion ? <LoadingIndicator label="Enviando checkpoint" showLabel /> : 'Enviar propuesta'}
               </Button>
-              {checkpointSuggestionNotice && <StatusMessage kind="success">{checkpointSuggestionNotice}</StatusMessage>}
+              {checkpointSuggestionNotice && <StatusMessage kind="success">{checkpointSuggestionNotice} <Link className="underline underline-offset-4" to="/me/suggestions?type=checkpoints">Ver mis propuestas</Link></StatusMessage>}
               {checkpointSuggestionError && <StatusMessage kind="error">{checkpointSuggestionError}</StatusMessage>}
             </form>
           )}
