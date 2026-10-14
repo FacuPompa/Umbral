@@ -41,7 +41,7 @@ export async function ensureCsrfToken() {
 
   const response = await fetch(apiUrl('/api/auth/csrf'), {
     credentials: 'include',
-  });
+  }).then(handleSessionResponse);
 
   if (!response.ok) {
     throw await errorFrom(response, 'No se pudo preparar una sesión segura.');
@@ -55,6 +55,14 @@ function clearCsrfToken() {
   csrfToken = undefined;
 }
 
+function handleSessionResponse(response) {
+  if (response.status === 401) {
+    clearCsrfToken();
+    window.dispatchEvent(new Event('umbral:session-expired'));
+  }
+  return response;
+}
+
 async function requestWithCsrf(path, options, method) {
   const headers = new Headers(options.headers);
   const csrf = await ensureCsrfToken();
@@ -65,7 +73,7 @@ async function requestWithCsrf(path, options, method) {
     method,
     headers,
     credentials: 'include',
-  });
+  }).then(handleSessionResponse);
 }
 
 export async function apiRequest(path, options = {}) {
@@ -86,7 +94,7 @@ export async function apiRequest(path, options = {}) {
     ...options,
     method,
     credentials: 'include',
-  });
+  }).then(handleSessionResponse);
 }
 
 export async function getJson(path, fallbackMessage) {

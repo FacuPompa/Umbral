@@ -14,6 +14,7 @@ import SearchPage from './features/search/SearchPage';
 const GameModerationPage = lazy(() => import('./features/games/GameModerationPage'));
 const GameDetailPage = lazy(() => import('./features/games/GameDetailPage'));
 const MySuggestionsPage = lazy(() => import('./features/games/MySuggestionsPage'));
+const UserModerationPage = lazy(() => import('./features/moderation/UserModerationPage'));
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="games/:gameId" element={<Suspense fallback={<main id="main-content" className="py-12"><LoadingIndicator label="Cargando juego" showLabel /></main>}><GameDetailPage /></Suspense>} />
           <Route path="suggestions/new" element={<GameSuggestionPage />} />
           <Route path="moderation/games" element={<Suspense fallback={<main id="main-content" className="py-12"><LoadingIndicator label="Cargando moderación" showLabel /></main>}><GameModerationPage /></Suspense>} />
+          <Route path="moderation/users" element={<Suspense fallback={<main id="main-content" className="py-12"><LoadingIndicator label="Cargando usuarios" showLabel /></main>}><UserModerationPage /></Suspense>} />
           <Route path="me" element={<ProfilePage />} />
           <Route path="me/library" element={<LibraryPage />} />
           <Route path="me/suggestions" element={<Suspense fallback={<main id="main-content" className="py-12"><LoadingIndicator label="Cargando propuestas" showLabel /></main>}><MySuggestionsPage /></Suspense>} />

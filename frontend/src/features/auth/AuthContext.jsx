@@ -9,11 +9,18 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let active = true;
+    let expired = false;
+
+    function handleSessionExpired() {
+      expired = true;
+      setUser(null);
+    }
+    window.addEventListener('umbral:session-expired', handleSessionExpired);
 
     async function restoreSession() {
       try {
         const currentUser = await fetchCurrentUser();
-        if (active) setUser(currentUser);
+        if (active && !expired) setUser(currentUser);
       } catch (error) {
         if (!(error instanceof ApiError) || error.status !== 401) {
           console.error('No se pudo restaurar la sesión.', error);
@@ -27,6 +34,7 @@ export function AuthProvider({ children }) {
     restoreSession();
     return () => {
       active = false;
+      window.removeEventListener('umbral:session-expired', handleSessionExpired);
     };
   }, []);
 
