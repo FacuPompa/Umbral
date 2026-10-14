@@ -63,6 +63,11 @@ function handleSessionResponse(response) {
   return response;
 }
 
+export function clearClientSession() {
+  clearCsrfToken();
+  window.dispatchEvent(new Event('umbral:session-expired'));
+}
+
 async function requestWithCsrf(path, options, method) {
   const headers = new Headers(options.headers);
   const csrf = await ensureCsrfToken();

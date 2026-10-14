@@ -103,4 +103,9 @@ public class User {
         accountStatusChangedAt = Instant.now();
         accountStatusChangedBy = moderator;
     }
+
+    public void changePassword(String passwordHash) {
+        this.passwordHash = passwordHash;
+        authenticationVersion++;
+    }
 }

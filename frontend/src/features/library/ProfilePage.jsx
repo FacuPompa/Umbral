@@ -53,6 +53,7 @@ export default function ProfilePage() {
     <main className="grid w-full max-w-[840px] gap-8 py-8 md:gap-10 md:py-12" id="main-content">
       <ProfileIdentity handle={user.handle} description="Tu espacio para seguir juegos y volver a las conversaciones que ya podés leer.">
         <Button asChild><Link to="/me/library">Ver mi biblioteca</Link></Button>
+        <Button asChild variant="outline"><Link to="/me/security">Seguridad de la cuenta</Link></Button>
         <Button asChild variant="outline"><Link to={`/users/${encodeURIComponent(user.handle)}`}>Ver perfil público</Link></Button>
       </ProfileIdentity>
       {loading && <ContentLoading label="Cargando perfil" variant="profile" />}

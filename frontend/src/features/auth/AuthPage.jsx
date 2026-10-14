@@ -11,7 +11,7 @@ export default function AuthPage({ mode }) {
   const isRegister = mode === 'register';
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, loading, login, register } = useAuth();
+  const { user, loading, login, register, passwordChanged } = useAuth();
   const [form, setForm] = useState({ handle: '', email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -65,6 +65,7 @@ export default function AuthPage({ mode }) {
           </p>
         </header>
 
+        {!isRegister && (passwordChanged || location.state?.passwordChanged) && <StatusMessage kind="success">Contraseña actualizada. Iniciá sesión nuevamente.</StatusMessage>}
         <form className="grid gap-6 border-t border-border pt-8" onSubmit={submit} aria-busy={submitting}>
           <Field id="auth-handle" label="Nombre de usuario" hint={isRegister ? 'Usá entre 3 y 30 caracteres: letras, números, guiones o guion bajo.' : undefined}>
             <Input
