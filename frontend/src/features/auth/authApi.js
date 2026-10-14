@@ -15,3 +15,8 @@ export function loginUser({ handle, password }) {
 export function logoutUser() {
   return sendJson('/api/auth/logout', 'POST', {}, 'No se pudo cerrar la sesión.');
 }
+
+export function changeUserPassword(currentPassword, newPassword) {
+  return sendJson('/api/me/password', 'POST', { currentPassword, newPassword },
+    'No se pudo cambiar la contraseña. Revisá los datos y probá nuevamente.');
+}

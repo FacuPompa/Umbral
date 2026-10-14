@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ApiError } from '../../lib/apiClient';
-import { fetchCurrentUser, loginUser, logoutUser, registerUser } from './authApi';
+import { ApiError, clearClientSession } from '../../lib/apiClient';
+import { changeUserPassword, fetchCurrentUser, loginUser, logoutUser, registerUser } from './authApi';
 import { AuthContext } from './authContext';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [passwordChanged, setPasswordChanged] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -41,22 +42,31 @@ export function AuthProvider({ children }) {
   const value = useMemo(() => ({
     user,
     loading,
+    passwordChanged,
     async register(credentials) {
       await registerUser(credentials);
       const authenticatedUser = await loginUser(credentials);
       setUser(authenticatedUser);
+      setPasswordChanged(false);
       return authenticatedUser;
     },
     async login(credentials) {
       const authenticatedUser = await loginUser(credentials);
       setUser(authenticatedUser);
+      setPasswordChanged(false);
       return authenticatedUser;
     },
     async logout() {
       await logoutUser();
       setUser(null);
     },
-  }), [loading, user]);
+    async changePassword(currentPassword, newPassword) {
+      await changeUserPassword(currentPassword, newPassword);
+      setPasswordChanged(true);
+      clearClientSession();
+      setUser(null);
+    },
+  }), [loading, user, passwordChanged]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -14,6 +14,7 @@ function getInitialTheme() {
 function accountLinks(user) {
   return [
     { label: 'Mi perfil', to: '/me', icon: UserRound },
+    { label: 'Seguridad', to: '/me/security', icon: ShieldCheck },
     { label: 'Mi biblioteca', to: '/me/library', icon: Library },
     { label: 'Mis propuestas', to: '/me/suggestions', icon: ClipboardList },
     { label: 'Ver perfil público', to: `/users/${encodeURIComponent(user.handle)}`, icon: ExternalLink },
