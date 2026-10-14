@@ -12,9 +12,10 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.CredentialsContainer;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
@@ -79,6 +80,9 @@ public class AuthenticationController {
                             request.password()
                     )
             );
+            if (authentication instanceof CredentialsContainer credentials) {
+                credentials.eraseCredentials();
+            }
             sessionAuthenticationStrategy.onAuthentication(authentication, servletRequest, servletResponse);
             SecurityContext context = SecurityContextHolder.createEmptyContext();
             context.setAuthentication(authentication);
@@ -86,7 +90,7 @@ public class AuthenticationController {
             securityContextRepository.saveContext(context, servletRequest, servletResponse);
 
             return authenticationService.getCurrentUser(authentication.getName());
-        } catch (BadCredentialsException exception) {
+        } catch (AuthenticationException exception) {
             throw new InvalidCredentialsException();
         }
     }

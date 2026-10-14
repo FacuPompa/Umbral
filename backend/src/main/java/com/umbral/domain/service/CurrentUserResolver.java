@@ -1,6 +1,7 @@
 package com.umbral.domain.service;
 
 import com.umbral.domain.entity.User;
+import com.umbral.config.AccountPrincipal;
 import com.umbral.domain.exception.UnauthenticatedUserException;
 import com.umbral.domain.exception.ResourceNotFoundException;
 import com.umbral.domain.repository.UserRepository;
@@ -27,9 +28,15 @@ public class CurrentUserResolver {
             throw new UnauthenticatedUserException("Necesitás iniciar sesión para continuar.");
         }
 
-        return userRepository.findByHandle(authentication.getName())
+        User user = userRepository.findByHandle(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "No existe el usuario autenticado."
                 ));
+        long sessionVersion = authentication.getPrincipal() instanceof AccountPrincipal principal
+                ? principal.getAuthenticationVersion() : 0;
+        if (user.isSuspended() || user.getAuthenticationVersion() != sessionVersion) {
+            throw new UnauthenticatedUserException("La cuenta no está habilitada para continuar.");
+        }
+        return user;
     }
 }

@@ -18,7 +18,10 @@ function accountLinks(user) {
     { label: 'Mis propuestas', to: '/me/suggestions', icon: ClipboardList },
     { label: 'Ver perfil público', to: `/users/${encodeURIComponent(user.handle)}`, icon: ExternalLink },
     { label: 'Sugerir juego', to: '/suggestions/new', icon: Plus },
-    ...(user.role === 'MODERATOR' ? [{ label: 'Moderación', to: '/moderation/games', icon: ShieldCheck }] : []),
+    ...(user.role === 'MODERATOR' ? [
+      { label: 'Moderación', to: '/moderation/games', icon: ShieldCheck },
+      { label: 'Moderar usuarios', to: '/moderation/users', icon: UserRound },
+    ] : []),
   ];
 }
 

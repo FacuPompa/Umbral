@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import { useAuth } from '../auth/useAuth';
 import {
@@ -105,6 +105,7 @@ export default function GameModerationPage() {
   return (
     <main className="mx-auto grid w-full max-w-[900px] gap-8 py-8 md:gap-12 md:py-12" id="main-content">
       <PageHeading title="Moderación" description="Revisá los juegos y checkpoints propuestos antes de incorporarlos al catálogo y habilitar conversaciones." />
+      <Link className="justify-self-start text-sm underline underline-offset-4" to="/moderation/users">Moderar usuarios</Link>
       {lastReview && <StatusMessage kind="success">{lastReview}</StatusMessage>}
       {loading && <ModerationLoading />}
       {error && (
