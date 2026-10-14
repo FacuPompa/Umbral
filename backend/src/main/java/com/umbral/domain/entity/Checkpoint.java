@@ -14,7 +14,7 @@ import jakarta.persistence.*;
                 )
         }
 )
-public class Checkpoint {
+public class Checkpoint extends CatalogAuditMetadata {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

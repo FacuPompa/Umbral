@@ -25,6 +25,8 @@ import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @SpringBootTest
 @Import({PostgresTestConfiguration.class, FakeGameDiscoveryConfiguration.class})
@@ -92,6 +94,11 @@ class GameSuggestionServiceTest {
 
         assertEquals(GameSuggestionStatus.APPROVED, approvedSuggestion.status());
         assertTrue(gameRepository.existsByRawgGameId(9999L));
+        var publishedGame = gameRepository.findByRawgGameId(9999L).orElseThrow();
+        assertEquals(userRepository.findByHandle("moderator").orElseThrow().getId(),
+                publishedGame.getCreatedByUserId());
+        assertNotNull(publishedGame.getCreatedAt());
+        assertNull(publishedGame.getUpdatedAt());
         assertEquals(0, gameSuggestionService.getPendingSuggestionsForModerator().size());
     }
 }

@@ -6,7 +6,7 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "games")
-public class Game {
+public class Game extends CatalogAuditMetadata {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

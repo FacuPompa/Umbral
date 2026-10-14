@@ -21,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @SpringBootTest
 @Import(PostgresTestConfiguration.class)
@@ -77,6 +79,11 @@ class CheckpointSuggestionServiceTest {
         assertEquals(CheckpointSuggestionStatus.APPROVED, approved.status());
         assertEquals("moderator", moderator.getHandle());
         assertTrue(checkpointRepository.existsByGameIdAndPosition(game.getId(), 11));
+        var publishedCheckpoint = checkpointRepository.findByGameIdOrderByPositionAsc(game.getId())
+                .stream().filter(checkpoint -> checkpoint.getPosition() == 11).findFirst().orElseThrow();
+        assertEquals(moderator.getId(), publishedCheckpoint.getCreatedByUserId());
+        assertNotNull(publishedCheckpoint.getCreatedAt());
+        assertNull(publishedCheckpoint.getUpdatedAt());
         assertEquals(0, checkpointSuggestionService.getPendingSuggestionsForModerator().size());
     }
 
