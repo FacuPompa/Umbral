@@ -1,7 +1,7 @@
-import { getJson, sendJson } from '../../lib/apiClient';
+import { restoreAuthentication, authenticate, endAuthentication, sendJson } from '../../lib/apiClient';
 
 export function fetchCurrentUser() {
-  return getJson('/api/auth/me', 'No se pudo recuperar tu sesión.');
+  return restoreAuthentication();
 }
 
 export function registerUser({ handle, email, password }) {
@@ -9,11 +9,11 @@ export function registerUser({ handle, email, password }) {
 }
 
 export function loginUser({ handle, password }) {
-  return sendJson('/api/auth/login', 'POST', { handle, password }, 'El usuario o la contraseña no son correctos.');
+  return authenticate({ handle, password });
 }
 
 export function logoutUser() {
-  return sendJson('/api/auth/logout', 'POST', {}, 'No se pudo cerrar la sesión.');
+  return endAuthentication();
 }
 
 export function changeUserPassword(currentPassword, newPassword) {

@@ -64,7 +64,7 @@ class AuthenticationControllerTest {
     }
 
     @Test
-    void registersMembersAndAuthenticatesThemWithASession() throws Exception {
+    void registersMembersAndAuthenticatesThemWithABearerToken() throws Exception {
         mockMvc.perform(post("/api/auth/register")
                         .with(browserCsrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -88,12 +88,12 @@ class AuthenticationControllerTest {
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.handle").value("marina"))
+                .andExpect(jsonPath("$.user.handle").value("marina"))
                 .andReturn();
 
-        HttpSession session = loginResult.getRequest().getSession(false);
-
-        mockMvc.perform(get("/api/auth/me").session((org.springframework.mock.web.MockHttpSession) session))
+        org.junit.jupiter.api.Assertions.assertNull(loginResult.getRequest().getSession(false));
+        String access = JsonPath.read(loginResult.getResponse().getContentAsString(), "$.accessToken");
+        mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + access))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.handle").value("marina"))
                 .andExpect(jsonPath("$.role").value("MEMBER"));
@@ -171,21 +171,15 @@ class AuthenticationControllerTest {
     }
 
     @Test
-    void renewsAnExistingSessionIdentifierOnSuccessfulLogin() throws Exception {
+    void neverAuthenticatesAnHttpSessionEvenOnSuccessfulLogin() throws Exception {
         registerSessionTestUser();
         MockHttpSession session = new MockHttpSession();
-        String previousId = session.getId();
-
-        mockMvc.perform(post("/api/auth/login")
-                        .session(session).with(browserCsrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(loginBody("una-clave-segura")))
-                .andExpect(status().isOk());
-
-        assertNotEquals(previousId, session.getId());
-        mockMvc.perform(get("/api/auth/me").session(session))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.handle").value("session-test"));
+        mockMvc.perform(post("/api/auth/login").session(session).with(browserCsrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(loginBody("una-clave-segura")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.accessToken").isNotEmpty());
+        org.junit.jupiter.api.Assertions.assertNull(session.getAttribute(
+                org.springframework.security.web.context.HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
+        mockMvc.perform(get("/api/auth/me").session(session)).andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -224,47 +218,22 @@ class AuthenticationControllerTest {
     }
 
     @Test
-    void rotatesRealCsrfTokensAndInvalidatesTheSessionOnLogout() throws Exception {
+    void rotatesRealCsrfOnLoginAndLogoutAndRevokesTheBearerGrant() throws Exception {
         registerSessionTestUser();
-        MvcResult initialCsrf = mockMvc.perform(get("/api/auth/csrf"))
+        MvcResult login = mockMvc.perform(post("/api/auth/login").with(browserCsrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(loginBody("una-clave-segura")))
                 .andExpect(status().isOk()).andReturn();
-        Cookie initialCookie = initialCsrf.getResponse().getCookie("XSRF-TOKEN");
-        assertNotNull(initialCookie);
-        String initialToken = JsonPath.read(initialCsrf.getResponse().getContentAsString(), "$.token");
-
-        MvcResult login = mockMvc.perform(post("/api/auth/login")
-                        .cookie(initialCookie).header("X-XSRF-TOKEN", initialToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(loginBody("una-clave-segura")))
-                .andExpect(status().isOk()).andReturn();
-        MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
-        assertNotNull(session);
-        Cookie clearedOnLogin = login.getResponse().getCookie("XSRF-TOKEN");
-        assertNotNull(clearedOnLogin);
-        assertEquals(0, clearedOnLogin.getMaxAge());
-
-        // Simulate the browser discarding the cookie cleared by login.
-        mockMvc.perform(post("/api/auth/logout").session(session)
-                        .header("X-XSRF-TOKEN", initialToken))
-                .andExpect(status().isForbidden());
-        mockMvc.perform(get("/api/auth/me").session(session))
-                .andExpect(status().isOk());
-
-        MvcResult renewedCsrf = mockMvc.perform(get("/api/auth/csrf").session(session))
-                .andExpect(status().isOk()).andReturn();
-        Cookie renewedCookie = renewedCsrf.getResponse().getCookie("XSRF-TOKEN");
-        assertNotNull(renewedCookie);
-        assertNotEquals(initialCookie.getValue(), renewedCookie.getValue());
-        String renewedToken = JsonPath.read(renewedCsrf.getResponse().getContentAsString(), "$.token");
-
-        MvcResult logout = mockMvc.perform(post("/api/auth/logout").session(session)
-                        .cookie(renewedCookie).header("X-XSRF-TOKEN", renewedToken))
+        String access = JsonPath.read(login.getResponse().getContentAsString(), "$.accessToken");
+        Cookie refresh = login.getResponse().getCookie(AuthCookies.REFRESH);
+        assertNotNull(refresh);
+        assertTrue(refresh.isHttpOnly());
+        assertEquals(0, login.getResponse().getCookie("XSRF-TOKEN").getMaxAge());
+        org.junit.jupiter.api.Assertions.assertNull(login.getRequest().getSession(false));
+        mockMvc.perform(post("/api/auth/logout").cookie(refresh)).andExpect(status().isForbidden());
+        MvcResult logout = mockMvc.perform(post("/api/auth/logout").with(browserCsrf()).cookie(refresh))
                 .andExpect(status().isNoContent()).andReturn();
-        assertTrue(session.isInvalid());
-        Cookie clearedOnLogout = logout.getResponse().getCookie("XSRF-TOKEN");
-        assertNotNull(clearedOnLogout);
-        assertEquals(0, clearedOnLogout.getMaxAge());
-        mockMvc.perform(get("/api/auth/me"))
+        assertEquals(0, logout.getResponse().getCookie(AuthCookies.REFRESH).getMaxAge());
+        mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + access))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -293,7 +262,10 @@ class AuthenticationControllerTest {
         String headerName = JsonPath.read(result.getResponse().getContentAsString(), "$.headerName");
 
         return request -> {
-            request.setCookies(cookie);
+            java.util.List<Cookie> cookies = new java.util.ArrayList<>();
+            if (request.getCookies() != null) cookies.addAll(java.util.List.of(request.getCookies()));
+            cookies.add(cookie);
+            request.setCookies(cookies.toArray(Cookie[]::new));
             request.addHeader(headerName, token);
             return request;
         };
