@@ -11,7 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpSession;
+import com.jayway.jsonpath.JsonPath;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
@@ -37,13 +37,13 @@ class PasswordChangeControllerTest {
         User owner = account("password-owner", UserRole.MEMBER);
         User other = account("password-other", UserRole.MEMBER);
         String otherHash = other.getPasswordHash();
-        MockHttpSession current = login(owner.getHandle(), "old-password");
-        MockHttpSession second = login(owner.getHandle(), "old-password");
-        mvc.perform(post("/api/me/password").session(current).with(csrf())
+        String current = login(owner.getHandle(), "old-password");
+        String second = login(owner.getHandle(), "old-password");
+        mvc.perform(post("/api/me/password").header("Authorization", "Bearer " + current).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"currentPassword\":\"old-password\",\"newPassword\":\" new-password \",\"userId\":" + other.getId() + "}"))
                 .andExpect(status().isNoContent()).andExpect(content().string(""));
-        assertTrue(current.isInvalid());
+        mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + current)).andExpect(status().isUnauthorized());
         users.flush();
         assertTrue(encoder.matches(" new-password ", owner.getPasswordHash()));
         assertFalse(encoder.matches("new-password", owner.getPasswordHash()));
@@ -52,55 +52,54 @@ class PasswordChangeControllerTest {
         assertFalse(owner.isSuspended());
         assertNull(owner.getAccountStatusChangedAt());
         assertEquals(otherHash, other.getPasswordHash());
-        mvc.perform(get("/api/auth/me").session(second)).andExpect(status().isUnauthorized());
-        assertTrue(second.isInvalid());
+        mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + second)).andExpect(status().isUnauthorized());
         mvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"handle\":\"password-owner\",\"password\":\"old-password\"}"))
                 .andExpect(status().isUnauthorized());
-        MockHttpSession fresh = login(owner.getHandle(), " new-password ");
-        mvc.perform(get("/api/auth/me").session(fresh)).andExpect(status().isOk());
+        String fresh = login(owner.getHandle(), " new-password ");
+        mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + fresh)).andExpect(status().isOk());
     }
 
     @Test
     void incorrectCurrentPasswordReturnsUsefulErrorWithoutClosingValidSession() throws Exception {
         User owner = account("wrong-current", UserRole.MEMBER);
-        MockHttpSession session = login(owner.getHandle(), "old-password");
+        String session = login(owner.getHandle(), "old-password");
         String oldHash = owner.getPasswordHash();
         change(session, "wrong-password", "new-password")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("La contraseña actual no es correcta."));
         assertEquals(oldHash, owner.getPasswordHash());
         assertEquals(0L, owner.getAuthenticationVersion());
-        mvc.perform(get("/api/auth/me").session(session)).andExpect(status().isOk());
+        mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + session)).andExpect(status().isOk());
     }
 
     @Test
     void rejectsSameShortBlankMissingAndMultibyteOversizedNewPasswords() throws Exception {
         User owner = account("invalid-password", UserRole.MEMBER);
-        MockHttpSession session = login(owner.getHandle(), "old-password");
+        String session = login(owner.getHandle(), "old-password");
         String original = owner.getPasswordHash();
         for (String next : new String[]{"old-password", "short", "        ", "é".repeat(37), "a".repeat(73)}) {
             change(session, "old-password", next).andExpect(status().isBadRequest());
             assertEquals(original, owner.getPasswordHash());
             assertEquals(0L, owner.getAuthenticationVersion());
         }
-        mvc.perform(post("/api/me/password").session(session).with(csrf())
+        mvc.perform(post("/api/me/password").header("Authorization", "Bearer " + session).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest());
-        mvc.perform(get("/api/auth/me").session(session)).andExpect(status().isOk());
+        mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + session)).andExpect(status().isOk());
     }
 
     @Test
-    void requiresAuthenticationAndCsrf() throws Exception {
+    void requiresAuthenticationAndAcceptsBearerWithoutCookieCsrf() throws Exception {
         mvc.perform(post("/api/me/password").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"currentPassword\":\"old-password\",\"newPassword\":\"new-password\"}"))
                 .andExpect(status().isUnauthorized());
         User owner = account("csrf-password", UserRole.MEMBER);
-        MockHttpSession session = login(owner.getHandle(), "old-password");
-        mvc.perform(post("/api/me/password").session(session).contentType(MediaType.APPLICATION_JSON)
+        String session = login(owner.getHandle(), "old-password");
+        mvc.perform(post("/api/me/password").header("Authorization", "Bearer " + session).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"currentPassword\":\"old-password\",\"newPassword\":\"new-password\"}"))
-                .andExpect(status().isForbidden());
-        assertEquals(0L, owner.getAuthenticationVersion());
+                .andExpect(status().isNoContent());
+        assertEquals(1L, owner.getAuthenticationVersion());
     }
 
     @Test
@@ -110,7 +109,7 @@ class PasswordChangeControllerTest {
                 .andExpect(status().isNoContent());
         assertEquals(UserRole.MODERATOR, moderator.getRole());
         User owner = account("suspended-password", UserRole.MEMBER);
-        MockHttpSession session = login(owner.getHandle(), "old-password");
+        String session = login(owner.getHandle(), "old-password");
         owner.suspend("Account disabled for test", moderator);
         users.flush();
         String hash = owner.getPasswordHash();
@@ -130,15 +129,15 @@ class PasswordChangeControllerTest {
         return users.save(new User(handle, handle + "@example.test", encoder.encode("old-password"), role));
     }
 
-    private MockHttpSession login(String handle, String password) throws Exception {
-        return (MockHttpSession) mvc.perform(post("/api/auth/login").with(csrf())
+    private String login(String handle, String password) throws Exception {
+        return JsonPath.read(mvc.perform(post("/api/auth/login").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"handle\":\"" + handle + "\",\"password\":\"" + password + "\"}"))
-                .andExpect(status().isOk()).andReturn().getRequest().getSession(false);
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(), "$.accessToken");
     }
 
-    private org.springframework.test.web.servlet.ResultActions change(MockHttpSession session, String current, String next) throws Exception {
-        return mvc.perform(post("/api/me/password").session(session).with(csrf())
+    private org.springframework.test.web.servlet.ResultActions change(String session, String current, String next) throws Exception {
+        return mvc.perform(post("/api/me/password").header("Authorization", "Bearer " + session).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"currentPassword\":\"" + current + "\",\"newPassword\":\"" + next + "\"}"));
     }

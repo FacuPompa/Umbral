@@ -16,7 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpSession;
+import com.jayway.jsonpath.JsonPath;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -198,27 +198,21 @@ class UserModerationControllerTest {
     void blocksLoginAndEveryPreSuspensionSessionEvenAfterReactivation() throws Exception {
         User moderator = moderator();
         User member = member("real-session");
-        MockHttpSession first = login(member.getHandle());
-        var context = (org.springframework.security.core.context.SecurityContext) first.getAttribute(
-                org.springframework.security.web.context.HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-        assertNull(context.getAuthentication().getCredentials());
-        assertNull(((org.springframework.security.core.userdetails.UserDetails)
-                context.getAuthentication().getPrincipal()).getPassword());
-        MockHttpSession untouched = login(member.getHandle());
-        mvc.perform(get("/api/auth/me").session(first)).andExpect(status().isOk());
+        String first = login(member.getHandle());
+
+        String untouched = login(member.getHandle());
+        mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + first)).andExpect(status().isOk());
         suspend(moderator, member).andExpect(status().isOk());
         mvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"handle\":\"real-session\",\"password\":\"test-password\"}"))
                 .andExpect(status().isUnauthorized());
-        mvc.perform(post("/api/me/library").session(first).with(csrf())
+        mvc.perform(post("/api/me/library").header("Authorization", "Bearer " + first).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content("{\"gameId\":1,\"status\":\"PLAYING\"}"))
                 .andExpect(status().isUnauthorized());
-        assertTrue(first.isInvalid());
         reactivate(moderator, member).andExpect(status().isOk());
-        mvc.perform(get("/api/auth/me").session(untouched)).andExpect(status().isUnauthorized());
-        assertTrue(untouched.isInvalid());
-        MockHttpSession fresh = login(member.getHandle());
-        mvc.perform(get("/api/auth/me").session(fresh)).andExpect(status().isOk());
+        mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + untouched)).andExpect(status().isUnauthorized());
+        String fresh = login(member.getHandle());
+        mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + fresh)).andExpect(status().isOk());
     }
 
     @Test
@@ -257,10 +251,10 @@ class UserModerationControllerTest {
                 .with(user(moderator.getHandle()).roles("MODERATOR")).with(csrf()));
     }
 
-    private MockHttpSession login(String handle) throws Exception {
-        return (MockHttpSession) mvc.perform(post("/api/auth/login").with(csrf())
+    private String login(String handle) throws Exception {
+        return JsonPath.read(mvc.perform(post("/api/auth/login").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"handle\":\"" + handle + "\",\"password\":\"test-password\"}"))
-                .andExpect(status().isOk()).andReturn().getRequest().getSession(false);
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(), "$.accessToken");
     }
 }

@@ -1,130 +1,86 @@
 package com.umbral.config;
 
+import com.umbral.domain.repository.UserRepository;
+import com.umbral.domain.service.JwtTokenService;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.context.annotation.*;
+import org.springframework.http.*;
+import org.springframework.security.authentication.*;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.*;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
-import org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy;
-import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.security.web.context.SecurityContextHolderFilter;
-import com.umbral.domain.repository.UserRepository;
-import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfAuthenticationStrategy;
-import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
+import org.springframework.security.web.context.NullSecurityContextRepository;
+import org.springframework.security.web.csrf.*;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
+import org.springframework.web.cors.*;
 import java.util.List;
 
 @Configuration
-@EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfiguration {
-
     @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http,
-            SecurityContextRepository securityContextRepository,
-            CookieCsrfTokenRepository csrfTokenRepository,
-            UserRepository userRepository
-    ) throws Exception {
-        return http
-                .cors(Customizer.withDefaults())
-                .csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository))
-                .securityContext(context -> context.securityContextRepository(securityContextRepository))
-                .addFilterAfter(new ActiveAccountFilter(userRepository, securityContextRepository,
-                        csrfTokenRepository), SecurityContextHolderFilter.class)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/auth/csrf", "/api/auth/register", "/api/auth/login").permitAll()
+    SecurityFilterChain securityFilterChain(HttpSecurity http, CookieCsrfTokenRepository csrf,
+                                            JwtTokenService jwt, UserRepository users) throws Exception {
+        return http.cors(Customizer.withDefaults())
+                .csrf(config -> config.csrfTokenRepository(csrf).requireCsrfProtectionMatcher(request -> {
+                    if (!CsrfFilter.DEFAULT_CSRF_MATCHER.matches(request)) return false;
+                    // Cookie-authenticated auth routes always require CSRF. A Bearer-only API call does not.
+                    String path = request.getServletPath().isEmpty() ? request.getRequestURI() : request.getServletPath();
+                    return path.startsWith("/api/auth/") || request.getHeader(HttpHeaders.AUTHORIZATION) == null;
+                }))
+                .securityContext(c -> c.securityContextRepository(new NullSecurityContextRepository()))
+                .sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .requestCache(AbstractHttpConfigurer::disable)
+                .oauth2ResourceServer(c -> c
+                        // Spring exempts Bearer requests from CSRF by default. Auth cookie routes must never use that exemption.
+                        .bearerTokenResolver(request -> {
+                            String path = request.getRequestURI();
+                            if (List.of("/api/auth/login", "/api/auth/register", "/api/auth/refresh",
+                                    "/api/auth/logout", "/api/auth/csrf").contains(path)) return null;
+                            return new DefaultBearerTokenResolver().resolve(request);
+                        })
+                        .jwt(j -> j.jwtAuthenticationConverter(jwt::authenticate)))
+                .addFilterAfter(new ActiveAccountFilter(users), BearerTokenAuthenticationFilter.class)
+                .authorizeHttpRequests(c -> c
+                        .requestMatchers("/api/auth/csrf", "/api/auth/register", "/api/auth/login",
+                                "/api/auth/refresh", "/api/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/games", "/api/games/*/checkpoints", "/api/users/*", "/api/search").permitAll()
-                        .anyRequest().authenticated()
-                )
-                .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
-                )
-                .formLogin(AbstractHttpConfigurer::disable)
-                .httpBasic(AbstractHttpConfigurer::disable)
-                .logout(AbstractHttpConfigurer::disable)
-                .build();
+                        .anyRequest().authenticated())
+                .exceptionHandling(c -> c.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                .formLogin(AbstractHttpConfigurer::disable).httpBasic(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable).build();
     }
-
     @Bean
-    public CookieCsrfTokenRepository csrfTokenRepository(
-            @Value("${umbral.session-cookie.same-site}") String sameSite,
-            @Value("${umbral.session-cookie.secure}") boolean secure
-    ) {
-        CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
-        repository.setCookieCustomizer(cookie -> cookie
-                .sameSite(sameSite)
-                .secure(secure)
-        );
+    CookieCsrfTokenRepository csrfTokenRepository(@Value("${umbral.session-cookie.same-site}") String sameSite,
+                                                 @Value("${umbral.session-cookie.secure}") boolean secure) {
+        var repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        repository.setCookieCustomizer(cookie -> cookie.sameSite(sameSite).secure(secure).path("/api"));
         return repository;
     }
-
     @Bean
-    public CorsConfigurationSource corsConfigurationSource(
-            @Value("${umbral.cors.allowed-origin:http://localhost:5173}") String allowedOrigin
-    ) {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(allowedOrigin));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of(HttpHeaders.CONTENT_TYPE, "X-XSRF-TOKEN"));
-        configuration.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", configuration);
+    CorsConfigurationSource corsConfigurationSource(
+            @Value("${umbral.cors.allowed-origin:http://localhost:5173}") String allowedOrigin) {
+        var config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of(allowedOrigin));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of(HttpHeaders.CONTENT_TYPE, HttpHeaders.AUTHORIZATION, "X-XSRF-TOKEN"));
+        config.setAllowCredentials(true);
+        var source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", config);
         return source;
     }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(
-            UserDetailsService userDetailsService,
-            PasswordEncoder passwordEncoder
-    ) {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder);
+    @Bean PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
+    @Bean AuthenticationManager authenticationManager(UserDetailsService users, PasswordEncoder encoder) {
+        var provider = new DaoAuthenticationProvider(users); provider.setPasswordEncoder(encoder);
         return provider::authenticate;
-    }
-
-    @Bean
-    public SessionAuthenticationStrategy sessionAuthenticationStrategy(
-            CookieCsrfTokenRepository csrfTokenRepository
-    ) {
-        CsrfAuthenticationStrategy csrfStrategy = new CsrfAuthenticationStrategy(csrfTokenRepository);
-        csrfStrategy.setRequestHandler(new XorCsrfTokenRequestAttributeHandler());
-        return new CompositeSessionAuthenticationStrategy(List.of(
-                new ChangeSessionIdAuthenticationStrategy(),
-                csrfStrategy
-        ));
-    }
-
-    @Bean
-    public SecurityContextRepository securityContextRepository() {
-        return new HttpSessionSecurityContextRepository();
     }
 }

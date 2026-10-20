@@ -21,6 +21,8 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.security:spring-security-oauth2-resource-server'
+    implementation 'org.springframework.security:spring-security-oauth2-jose'
 
     // Validation
     implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -49,4 +51,6 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    // Isolated test-only key; production still requires UMBRAL_JWT_SECRET.
+    systemProperty 'umbral.jwt.secret', 'dGVzdC1vbmx5LWtleS1ub3QtZm9yLXByb2R1Y3Rpb24tMzItYnl0ZXM='
 }
